@@ -1,0 +1,20 @@
+rabbitmqadmin.py declare exchange --vhost=ibm name=ibmexchange1 type=direct 
+rabbitmqadmin.py --vhost=ibm declare binding source=ibmexchange1 destination_type=queue destination=ibmq1 routing_key=ibmkey
+
+rabbitmqadmin.py declare queue --vhost=ibm name=ibmq1 durable=true
+
+
+rabbitmqadmin.py --vhost=ibm declare binding source=ibmexchange1 destination_type=queue destination=ibmq1 routing_key=ibmkey
+
+
+rabbitmqadmin.py -V ibm list exchanges
+
+rabbitmqadmin.py list queues --V ibm
+
+rabbitmqadmin.py -f long -d 3 list queues 
+
+rabbitmqadmin.py declare queue name=ibmq2 durable=false
+
+rabbitmqadmin.py declare exchange name=ex2 type=fanout --vhost=ibm
+
+rabbitmqadmin.py -f tsv -q list connections name | while read conn ; do rabbitmqadmin -q close connection name="${conn}" ; done

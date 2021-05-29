@@ -1,0 +1,4372 @@
+package com.ibm.rabbitmq;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+
+public class Send {
+
+    private final static String QUEUE_NAME = "Vivek";
+
+    public static void main(String[] argv) throws Exception {
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost("localhost");
+        try (Connection connection = factory.newConnection();
+             Channel channel = connection.createChannel()) {
+            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+            String message = "Hello World!";
+            channel.basicPublish("", QUEUE_NAME, null, message.getBytes("UTF-8"));
+            System.out.println(" [x] Sent '" + message + "'");
+            //Thread.sleep(30000000);
+        }
+    }
+}
+
+
+
+
+package com.ibm.rabbitmq;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DeliverCallback;
+
+public class Recv {
+
+    private final static String QUEUE_NAME = "hello";
+
+    public static void main(String[] argv) throws Exception {
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost("localhost");
+       
+        Connection connection = factory.newConnection();
+        Channel channel = connection.createChannel();
+
+        channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+        System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+
+        DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+            String message = new String(delivery.getBody(), "UTF-8");
+            System.out.println(" [x] Received '" + message + "'");
+        };
+        channel.basicConsume(QUEUE_NAME, true, deliverCallback, consumerTag -> { });
+    }
+}
+
+
+
+
+
+
+
+
+rabbitmqctl -help
+
+Usage
+
+rabbitmqctl [--node <node>] [--timeout <timeout>] [--longnames] [--quiet] <command> [<command options>]
+
+Available commands:
+
+Help:
+
+   autocomplete                  Provides command name autocomplete variants
+   help                          Displays usage information for a command
+   version                       Displays CLI tools version
+
+Nodes:
+
+   await_startup                 Waits for the RabbitMQ application to start on the target node
+   reset                         Instructs a RabbitMQ node to leave the cluster and return to its virgin state
+   rotate_logs                   Instructs the RabbitMQ node to perform internal log rotation
+   shutdown                      Stops RabbitMQ and its runtime (Erlang VM). Monitors progress for local nodes. Does not require a PID file path.
+   start_app                     Starts the RabbitMQ application but leaves the runtime (Erlang VM) running
+   stop                          Stops RabbitMQ and its runtime (Erlang VM). Requires a local node pid file path to monitor progress.
+   stop_app                      Stops the RabbitMQ application, leaving the runtime (Erlang VM) running
+   wait                          Waits for RabbitMQ node startup by monitoring a local PID file. See also 'rabbitmqctl await_online_nodes'
+
+Cluster:
+
+   await_online_nodes            Waits for <count> nodes to join the cluster
+   change_cluster_node_type      Changes the type of the cluster node
+   cluster_status                Displays all the nodes in the cluster grouped by node type, together with the currently running nodes
+   force_boot                    Forces node to start even if it cannot contact or rejoin any of its previously known peers
+   force_reset                   Forcefully returns a RabbitMQ node to its virgin state
+   forget_cluster_node           Removes a node from the cluster
+   join_cluster                  Instructs the node to become a member of the cluster that the specified node is in
+   rename_cluster_node           Renames cluster nodes in the local database
+   update_cluster_nodes          Instructs a cluster member node to sync the list of known cluster members from <seed_node>
+
+Replication:
+
+   cancel_sync_queue             Instructs a synchronising mirrored queue to stop synchronising itself
+   sync_queue                    Instructs a mirrored queue with unsynchronised mirrors (follower replicas) to synchronise them
+
+Users:
+
+   add_user                      Creates a new user in the internal database. This user will have no permissions for any virtual hosts by default.
+   authenticate_user             Attempts to authenticate a user. Exits with a non-zero code if authentication fails.
+   change_password               Changes the user password
+   clear_password                Clears (resets) password and disables password login for a user
+   clear_user_limits             Clears user connection/channel limits
+   delete_user                   Removes a user from the internal database. Has no effect on users provided by external backends such as LDAP
+   list_user_limits              Displays configured user limits
+   list_users                    List user names and tags
+   set_user_limits               Sets user limits
+   set_user_tags                 Sets user tags
+
+Access Control:
+
+   clear_permissions             Revokes user permissions for a vhost
+   clear_topic_permissions       Clears user topic permissions for a vhost or exchange
+   list_permissions              Lists user permissions in a virtual host
+   list_topic_permissions        Lists topic permissions in a virtual host
+   list_user_permissions         Lists permissions of a user across all virtual hosts
+   list_user_topic_permissions   Lists user topic permissions
+   list_vhosts                   Lists virtual hosts
+   set_permissions               Sets user permissions for a vhost
+   set_topic_permissions         Sets user topic permissions for an exchange
+
+Monitoring, observability and health checks:
+
+   list_bindings                 Lists all bindings on a vhost
+   list_channels                 Lists all channels in the node
+   list_ciphers                  Lists cipher suites supported by encoding commands
+   list_connections              Lists AMQP 0.9.1 connections for the node
+   list_consumers                Lists all consumers for a vhost
+   list_exchanges                Lists exchanges
+   list_hashes                   Lists hash functions supported by encoding commands
+   list_node_auth_attempt_stats  Lists authentication attempts on the target node
+   list_queues                   Lists queues and their properties
+   list_unresponsive_queues      Tests queues to respond within timeout. Lists those which did not respond
+   ping                          Checks that the node OS process is up, registered with EPMD and CLI tools can authenticate with it
+   report                        Generate a server status report containing a concatenation of all server status information for support purposes
+   schema_info                   Lists schema database tables and their properties
+   status                        Displays status of a node
+
+Parameters:
+
+   clear_global_parameter        Clears a global runtime parameter
+   clear_parameter               Clears a runtime parameter.
+   list_global_parameters        Lists global runtime parameters
+   list_parameters               Lists runtime parameters for a virtual host
+   set_global_parameter          Sets a runtime parameter.
+   set_parameter                 Sets a runtime parameter.
+
+Policies:
+
+   clear_operator_policy         Clears an operator policy
+   clear_policy                  Clears (removes) a policy
+   list_operator_policies        Lists operator policy overrides for a virtual host
+   list_policies                 Lists all policies in a virtual host
+   set_operator_policy           Sets an operator policy that overrides a subset of arguments in user policies
+   set_policy                    Sets or updates a policy
+
+Virtual hosts:
+
+   add_vhost                     Creates a virtual host
+   clear_vhost_limits            Clears virtual host limits
+   delete_vhost                  Deletes a virtual host
+   list_vhost_limits             Displays configured virtual host limits
+   restart_vhost                 Restarts a failed vhost data stores and queues
+   set_vhost_limits              Sets virtual host limits
+   trace_off                     
+   trace_on                      
+
+Configuration and Environment:
+
+   decode                        Decrypts an encrypted configuration value
+   encode                        Encrypts a sensitive configuration value
+   environment                   Displays the name and value of each variable in the application environment for each running application
+   set_cluster_name              Sets the cluster name
+   set_disk_free_limit           Sets the disk_free_limit setting
+   set_log_level                 Sets log level in the running node
+   set_vm_memory_high_watermark  Sets the vm_memory_high_watermark setting
+
+Definitions:
+
+   export_definitions            Exports definitions in JSON or compressed Erlang Term Format.
+   import_definitions            Imports definitions in JSON or compressed Erlang Term Format.
+
+Feature flags:
+
+   enable_feature_flag           Enables a feature flag or all supported feature flags on the target node
+   list_feature_flags            Lists feature flags
+
+Operations:
+
+   close_all_connections         Instructs the broker to close all connections for the specified vhost or entire RabbitMQ node
+   close_all_user_connections    Instructs the broker to close all connections of the specified user
+   close_connection              Instructs the broker to close the connection associated with the Erlang process id
+   eval                          Evaluates a snippet of Erlang code on the target node
+   eval_file                     Evaluates a file that contains a snippet of Erlang code on the target node
+   exec                          Evaluates a snippet of Elixir code on the CLI node
+   force_gc                      Makes all Erlang processes on the target node perform/schedule a full sweep garbage collection
+   resume_listeners              Resumes client connection listeners making them accept client connections again
+   suspend_listeners             Suspends client connection listeners so that no new client connections are accepted
+
+Queues:
+
+   delete_queue                  Deletes a queue
+   purge_queue                   Purges a queue (removes all messages in it)
+
+Deprecated:
+
+   hipe_compile                  DEPRECATED. This command is a no-op. HiPE is no longer supported by modern Erlang versions
+   node_health_check             DEPRECATED. Performs intrusive, opinionated health checks on a fully booted node. See https://www.rabbitmq.com/monitoring.html#health-checks instead
+
+Use 'rabbitmqctl help <command>' to learn more about a specific command
+# rabbitmq-diagnostics status --help
+
+Usage
+
+rabbitmq-diagnostics [--node <node>] [--longnames] [--quiet] status [--unit <unit>] [--timeout <timeout>]
+
+Displays status of a node.
+
+
+Arguments and Options
+
+--unit <bytes | mb | gb>
+	byte multiple (bytes, megabytes, gigabytes) to use
+
+--formatter <json | erlang>
+	alternative formatter (JSON, Erlang terms)
+
+
+Relevant Doc Guides
+
+ * https://rabbitmq.com/monitoring.html
+
+
+General Options
+
+The following options are accepted by most or all commands.
+
+short            | long          | description
+-----------------|---------------|--------------------------------
+-?               | --help        | displays command help
+-n <node>        | --node <node> | connect to node <node>
+-l               | --longnames   | use long host names
+-t               | --timeout <n> | for commands that support it, operation timeout in seconds
+-q               | --quiet       | suppress informational messages
+-s               | --silent      | suppress informational messages
+                                 | and table header row
+-p               | --vhost       | for commands that are scoped to a virtual host,
+                 |               | virtual host to use
+                 | --formatter   | alternative result formatter to use
+                                 | if supported: json, pretty_table, table, csv, erlang
+                                   not all commands support all (or any) alternative formatters.
+
+# rabbitmq-diagnostics help status
+
+Usage
+
+rabbitmq-diagnostics [--node <node>] [--longnames] [--quiet] status [--unit <unit>] [--timeout <timeout>]
+
+Displays status of a node.
+
+
+Arguments and Options
+
+--unit <bytes | mb | gb>
+	byte multiple (bytes, megabytes, gigabytes) to use
+
+--formatter <json | erlang>
+	alternative formatter (JSON, Erlang terms)
+
+
+Relevant Doc Guides
+
+ * https://rabbitmq.com/monitoring.html
+
+
+General Options
+
+The following options are accepted by most or all commands.
+
+short            | long          | description
+-----------------|---------------|--------------------------------
+-?               | --help        | displays command help
+-n <node>        | --node <node> | connect to node <node>
+-l               | --longnames   | use long host names
+-t               | --timeout <n> | for commands that support it, operation timeout in seconds
+-q               | --quiet       | suppress informational messages
+-s               | --silent      | suppress informational messages
+                                 | and table header row
+-p               | --vhost       | for commands that are scoped to a virtual host,
+                 |               | virtual host to use
+                 | --formatter   | alternative result formatter to use
+                                 | if supported: json, pretty_table, table, csv, erlang
+                                   not all commands support all (or any) alternative formatters.
+
+# rabbitmqctl add_user bvr bvr
+Adding user "bvr" ...
+Done. Don't forget to grant the user permissions to some virtual hosts! See 'rabbitmqctl help set_permissions' to learn more.
+# rabbitmqctl authenticate_user bvr bvr
+Authenticating user "bvr" ...
+Success
+# 
+# 
+# 
+# rabbitmqctl change_password bvr bvr123
+Changing password for user "bvr" ...
+# rabbitmqctl authenticate_user bvr bvr
+Authenticating user "bvr" ...
+Error:
+Error: failed to authenticate user "bvr"
+user 'bvr' - invalid credentials
+# rabbitmqctl list_users
+Listing users ...
+user	tags
+monitor	[monitoring]
+guest	[administrator]
+bvr	[]
+demoroot	[administrator]
+root	[administrator]
+# rabbitmqctl delete_user root
+Deleting user "root" ...
+# rabbitmqctl set_user_tags bvr administrator
+Setting tags for user "bvr" to [administrator] ...
+# 
+# 
+# 
+# history 
+sh: 22: history: not found
+# 
+
+
+
+
+
+# rabbitmqctl clear_permissions -p demohost bvr
+Clearing permissions for user "bvr" in vhost "demohost" ...
+# rabbitmqctl list_permissions -p demohost
+Listing permissions for vhost "demohost" ...
+user	configure	write	read
+guest	.*	.*	.*
+demoroot	.*	.*	.*
+# rabbitmqctl list_user_permissions bvr
+Listing permissions for user "bvr" ...
+
+# rabbitmqctl list_vhosts
+Listing vhosts ...
+name
+demohost
+/
+# rabbitmqctl set_permissions -p demohost bvr "^bvr-.*" ".*" ".*"
+Setting permissions for user "bvr" in vhost "demohost" ...
+# rabbitmqctl list_topic_user_permissions bvr
+
+Command 'list_topic_user_permissions' not found. 
+Did you mean 'list_user_topic_permissions'? 
+
+# rabbitmqctl list_user_topic_permisssions bvr
+
+Command 'list_user_topic_permisssions' not found. 
+Did you mean 'list_user_topic_permissions'? 
+
+# rabbitmqctl list_user_topic_permissions bvr
+Listing topic permissions for user "bvr" ...
+
+# rabbitmqctl set_topic_permissions -p demohost bvr amq.topic "^bvr-.*" "^bvr-.*"
+Setting topic permissions on "amq.topic" for user "bvr" in vhost "demohost" ...
+# 
+
+
+
+
+# rabbitmqctl list_bindings -p / sample.direct LQ1
+Error (argument validation): Info key(s) LQ1,sample.direct are not supported
+Arguments given:
+	list_bindings -p / sample.direct LQ1
+
+Usage
+
+rabbitmqctl [--node <node>] [--longnames] [--quiet] list_bindings [--vhost <vhost>] [--no-table-headers] [<column> ...] [--timeout <timeout>]
+# rabbitmqctl list_bindings --vhost / 
+Listing bindings for vhost /...
+source_name	source_kind	destination_name	destination_kind	routing_key	arguments
+	exchange	TOPIC1	queue	TOPIC1	[]
+	exchange	TOPIC2	queue	TOPIC2	[]
+	exchange	LQ-DLQ	queue	LQ-DLQ	[]
+	exchange	LQ1	queue	LQ1	[]
+	exchange	LQ-MAXLENG	queue	LQ-MAXLENG	[]
+	exchange	HEAD2	queue	HEAD2	[]
+	exchange	FAN1	queue	FAN1	[]
+	exchange	LQ2	queue	LQ2	[]
+	exchange	FAN2	queue	FAN2	[]
+	exchange	FAN3	queue	FAN3	[]
+	exchange	HEAD1	queue	HEAD1	[]
+sample.direct	exchange	LQ1	queue	samplekey1	[]
+sample.direct	exchange	LQ2	queue	samplekey2	[]
+sample.fanout	exchange	FAN1	queue		[]
+sample.fanout	exchange	FAN3	queue		[]
+sample.fanout	exchange	FAN2	queue	FAN2	[]
+sample.headers	exchange	HEAD1	queue		[{"format","pdf"}]
+sample.headers	exchange	HEAD2	queue		[{"format","img"}]
+sample.headers	exchange	HEAD2	queue		[{"format","png"}]
+sample.topic	exchange	TOPIC1	queue	*.ka.*	[]
+sample.topic	exchange	TOPIC2	queue	*.mh.*	[]
+# rabbitmqctl list_exchanges --vhost / 
+Listing exchanges for vhost / ...
+name	type
+sample.dlq	direct
+sample.headers	headers
+amq.direct	direct
+sample.direct	direct
+sample.topic	topic
+amq.match	headers
+amq.fanout	fanout
+amq.rabbitmq.trace	topic
+	direct
+amq.topic	topic
+amq.headers	headers
+sample.fanout	fanout
+# 
+# 
+# rabbitmqctl list_hashes
+Listing supported hash algorithms ...
+[sha,sha224,sha256,sha384,sha512,sha3_224,sha3_256,sha3_384,sha3_512,blake2b,
+ blake2s,md4,md5,ripemd160]
+# 
+# 
+# 
+# rabbitmqctl list_queues --vhost /
+Timeout: 60.0 seconds ...
+Listing queues for vhost / ...
+name	messages
+TOPIC1	3
+TOPIC2	2
+LQ-DLQ	0
+LQ1	5
+LQ-MAXLENG	0
+HEAD2	1
+FAN1	2
+LQ2	2
+FAN2	2
+FAN3	2
+HEAD1	1
+# rabbitmqctl list_unresponsive_queues 
+Listing unresponsive queues for vhost / ...
+# 
+# 
+# rabbitmqctl ping -n rabbit@my-rabbit
+Will ping rabbit@my-rabbit. This only checks if the OS process is running and registered with epmd. Timeout: 60000 ms.
+Ping succeeded
+# 
+# 
+# 
+# 
+# rabbitmqctl schema_info      
+Asking node rabbit@my-rabbit to report its schema...
+name	cookie	active_replicas	user_properties
+rabbit_user_permission	{{1621837054927439800,-576460752303422847,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_topic_trie_edge	{{1621837055015949900,-576460752303421983,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_queue	{{1621837055077832700,-576460752303421311,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+rabbit_semi_durable_route	{{1621837054983202700,-576460752303422367,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+tracked_connection_table_per_user_on_node_rabbit@my-rabbit	{{1621837056402273300,-576460752303422973,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+tracked_connection_on_node_rabbit@my-rabbit	{{1621837056378454000,-576460752303423069,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+tracked_channel_on_node_rabbit@my-rabbit	{{1621837056358826300,-576460752303423261,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+schema	{{1621837054848203900,-576460752303423071,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_exchange_serial	{{1621837055052882600,-576460752303421599,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_route	{{1621837054994926600,-576460752303422271,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+rabbit_exchange	{{1621837055039143600,-576460752303421695,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+rabbit_vhost	{{1621837054944111100,-576460752303422655,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+mirrored_sup_childspec	{{1621837055091776500,-576460752303421119,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_listener	{{1621837054952012400,-576460752303422559,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+gm_group	{{1621837055084524700,-576460752303421215,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+rabbit_topic_permission	{{1621837054935387000,-576460752303422751,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_topic_trie_binding	{{1621837055022714600,-576460752303421887,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_reverse_route	{{1621837055002373300,-576460752303422175,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_durable_route	{{1621837054962924800,-576460752303422463,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+tracked_connection_per_vhost_on_node_rabbit@my-rabbit	{{1621837056385605700,-576460752303423390,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_user	{{1621837054918347000,-576460752303422943,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+rabbit_topic_trie_node	{{1621837055009264100,-576460752303422079,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_durable_queue	{{1621837055068298200,-576460752303421407,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_durable_exchange	{{1621837055029237300,-576460752303421791,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+tracked_channel_table_per_user_on_node_rabbit@my-rabbit	{{1621837056369456000,-576460752303423165,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_runtime_parameters	{{1621837055059342500,-576460752303421503,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_node_maintenance_states	{{1621837055525257200,-576460752303423485,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+# rabbitmqctl schema+info name active_replicas 
+
+Command 'schema+info' not found. 
+Did you mean 'schema_info'? 
+
+
+rabbitmq-service.bat remove
+rabbitmq-service.bat install
+rabbitmq-service.bat start
+
+
+# rabbitmqctl schema_info name active_replicas
+Asking node rabbit@my-rabbit to report its schema...
+name	active_replicas
+rabbit_user_permission	[rabbit@my-rabbit]
+rabbit_topic_trie_edge	[rabbit@my-rabbit]
+rabbit_queue	[rabbit@my-rabbit]
+rabbit_semi_durable_route	[rabbit@my-rabbit]
+tracked_connection_table_per_user_on_node_rabbit@my-rabbit	[rabbit@my-rabbit]
+tracked_connection_on_node_rabbit@my-rabbit	[rabbit@my-rabbit]
+tracked_channel_on_node_rabbit@my-rabbit	[rabbit@my-rabbit]
+schema	[rabbit@my-rabbit]
+rabbit_exchange_serial	[rabbit@my-rabbit]
+rabbit_route	[rabbit@my-rabbit]
+rabbit_exchange	[rabbit@my-rabbit]
+rabbit_vhost	[rabbit@my-rabbit]
+mirrored_sup_childspec	[rabbit@my-rabbit]
+rabbit_listener	[rabbit@my-rabbit]
+gm_group	[rabbit@my-rabbit]
+rabbit_topic_permission	[rabbit@my-rabbit]
+rabbit_topic_trie_binding	[rabbit@my-rabbit]
+rabbit_reverse_route	[rabbit@my-rabbit]
+rabbit_durable_route	[rabbit@my-rabbit]
+tracked_connection_per_vhost_on_node_rabbit@my-rabbit	[rabbit@my-rabbit]
+rabbit_user	[rabbit@my-rabbit]
+rabbit_topic_trie_node	[rabbit@my-rabbit]
+rabbit_durable_queue	[rabbit@my-rabbit]
+rabbit_durable_exchange	[rabbit@my-rabbit]
+tracked_channel_table_per_user_on_node_rabbit@my-rabbit	[rabbit@my-rabbit]
+rabbit_runtime_parameters	[rabbit@my-rabbit]
+rabbit_node_maintenance_states	[rabbit@my-rabbit]
+# 
+# 
+# 
+# rabbitmqctl list_parameters
+Listing runtime parameters for vhost "/" ...
+
+# rabbitmqctl list_policies
+Listing policies for vhost "/" ...
+
+# rabbitmqctl add_vhost IBM
+Adding vhost "IBM" ...
+# rabbitmqctl clear_vhost_limits -p IBM
+Clearing vhost "IBM" limits ...
+Error:
+Parameter does not exist
+# rabbitmqctl delete_vhost IBM
+Deleting vhost "IBM" ...
+# rabbitmqctl restart_vhost demohost
+Error (argument validation): too many arguments.
+Arguments given:
+	restart_vhost demohost
+
+Usage
+
+rabbitmqctl [--node <node>] [--longnames] [--quiet] restart_vhost [--vhost <vhost>] [--timeout <timeout>]
+# rabbitmqctl restart_vhost --vhost demohost
+Trying to restart vhost 'demohost' on node 'rabbit@my-rabbit' ...
+Vhost 'demohost' is already running on node 'rabbit@my-rabbit'
+# 
+# 
+# 
+# 
+# rabbitmqctl add_vhost ibm
+Adding vhost "ibm" ...
+# 
+# 
+# rabbitmqctl set_vhost_limits -p ibm '{"max-connections": 50}'
+Setting vhost limits to "{"max-connections": 50}" for vhost "ibm" ...
+# rabbitmqctl set_vhost_limits -p ibm '{"max-queues": 256}'
+Setting vhost limits to "{"max-queues": 256}" for vhost "ibm" ...
+# rabbitmqctl set_vhost_limits -p ibm '{"max-connections": -1}'
+Setting vhost limits to "{"max-connections": -1}" for vhost "ibm" ...
+# 
+# 
+# rabbitmqadmin declare exchange --vhost=ibm name=ibmhost1 type=direct
+*** Access refused: /api/exchanges/ibm/ibmhost1
+
+
+wget http://127.0.0.1:15672/cli/rabbitmqadmin
+chmod +x rabbitmqadmin
+mv rabbitmqadmin /etc/rabbitmq
+
+
+
+Summary:
+
+Other answers are good alternatives to what was asked for. Below are commands you can use from the command line.
+
+First, do all the necessary prep work, e.g. install rabbit, rabbitmqadmin, and rabbitctl. The idea is to use commands from rabbitmqctl and rabbitmqadmin. You can see some command examples: https://www.rabbitmq.com/management-cli.html
+
+Example Commands/Setup:
+
+The following commands should give you the majority if not all of what you need:
+
+# Get the cli and make it available to use.
+wget http://127.0.0.1:15672/cli/rabbitmqadmin
+chmod +x rabbitmqadmin
+mv rabbitmqadmin /etc/rabbitmq
+
+Add a user and permissions
+
+rabbitmqctl add_user bvr bvr123
+rabbitmqctl set_user_tags bvr bvr123
+rabbitmqctl set_permissions -p / bvr ".*" ".*" ".*"
+
+Make a virtual host and Set Permissions
+
+rabbitmqctl add_vhost Some_Virtual_Host
+rabbitmqctl set_permissions -p Some_Virtual_Host guest ".*" ".*" ".*"
+
+
+
+
+# chmod +x rabbitmqadmin
+chmod: cannot access 'rabbitmqadmin': No such file or directory
+
+
+
+# rabbitmqctl set_permissions -p ibm bvr ".*" ".*" ".*"
+Setting permissions for user "bvr" in vhost "ibm" ...
+# rabbitmqadmin declare exchange --vhost=ibm name=ibmexchange1 type=direct
+*** Access refused: /api/exchanges/ibm/ibmexchange1
+
+# rabbitmqadmin declare exchange --vhost=ibm name=ibmexchange1 type=direct -u bvr -p bvr
+*** Access refused: /api/exchanges/ibm/ibmexchange1
+
+# rabbitmqadmin declare exchange --vhost=ibm name=ibmexchange1 type=direct -u bvr -p bvr123
+exchange declared
+# 
+# 
+# 
+# rabbitmqadmin declare queue --vhost=ibm name=ibmq1 durable=true         
+*** Access refused: /api/queues/ibm/ibmq1
+
+# rabbitmqadmin declare queue --vhost=ibm name=ibmq1 durable=true -u bvr -p bvr123
+queue declared
+# rabbitmqadmin --vhost=ibm declare binding source=ibmexchange1 destination_type=queue destination=ibmq1 routing_key=ibmkey
+*** Access refused: /api/bindings/ibm/e/ibmexchange1/q/ibmq1
+
+# rabbitmqadmin --vhost=ibm declare binding source=ibmexchange1 destination_type=queue destination=ibmq1 routing_key=ibmkey -u bvr -p bvr123
+binding declared
+# 
+
+
+
+//FOR WINDOWS 
+
+RENAME THE FILE TO .PY 
+
+rabbitmqadmin.py declare exchange --vhost=Some_Virtual_Host name=some_exchange type=direct
+
+
+
+# 
+# rabbitmqadmin -V ibm list exchanges
++--------------------+---------+
+|        name        |  type   |
++--------------------+---------+
+|                    | direct  |
+| amq.direct         | direct  |
+| amq.fanout         | fanout  |
+| amq.headers        | headers |
+| amq.match          | headers |
+| amq.rabbitmq.trace | topic   |
+| amq.topic          | topic   |
+| ibmexchange1       | direct  |
++--------------------+---------+
+# 
+# 
+# rabbitmqctl list_exchanges --vhost ibm
+Listing exchanges for vhost ibm ...
+name	type
+amq.match	headers
+amq.headers	headers
+amq.fanout	fanout
+ibmexchange1	direct
+amq.rabbitmq.trace	topic
+	direct
+amq.direct	direct
+amq.topic	topic
+# 
+# 
+# rabbitmqadmin list queues --vhost ibm
++-------+----------+
+| name  | messages |
++-------+----------+
+| ibmq1 | 0        |
++-------+----------+
+# rabbitmqadmin -f long -d 3 list queues 
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: FAN1
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 2
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 2
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 2
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 248
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:32
+                                   memory: 19880
+                            message_bytes: 38
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 38
+                        message_bytes_ram: 38
+                      message_bytes_ready: 38
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 1
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 2
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 2
+                             messages_ram: 2
+                           messages_ready: 2
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 2
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 420021
+                  reductions_details.rate: 287.6
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: FAN2
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 2
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 2
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 2
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 249
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 19848
+                            message_bytes: 38
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 38
+                        message_bytes_ram: 38
+                      message_bytes_ready: 38
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 1
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 2
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 2
+                             messages_ram: 2
+                           messages_ready: 2
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 2
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 422839
+                  reductions_details.rate: 287.4
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: FAN3
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 2
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 2
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 2
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 249
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 19880
+                            message_bytes: 38
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 38
+                        message_bytes_ram: 38
+                      message_bytes_ready: 38
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 1
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 2
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 2
+                             messages_ram: 2
+                           messages_ready: 2
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 2
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 423096
+                  reductions_details.rate: 287.6
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: HEAD1
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 1
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 1
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 1
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 233
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 19344
+                            message_bytes: 32
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 32
+                        message_bytes_ram: 32
+                      message_bytes_ready: 32
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 1
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 1
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 1
+                             messages_ram: 1
+                           messages_ready: 1
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 1
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 367894
+                  reductions_details.rate: 284.8
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: HEAD2
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 1
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 1
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 1
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 233
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 19352
+                            message_bytes: 34
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 34
+                        message_bytes_ram: 34
+                      message_bytes_ready: 34
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 1
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 1
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 1
+                             messages_ram: 1
+                           messages_ready: 1
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 1
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 363520
+                  reductions_details.rate: 284.6
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: LQ-DLQ
+                                     type: classic
+         arguments.x-dead-letter-exchange: sample.dlq
+      arguments.x-dead-letter-routing-key: sampledlq
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", 0, 0, 0, 0]
+                 backing_queue_status.len: 0
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 0
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 0
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 253
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 13600
+                            message_bytes: 0
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 0
+                        message_bytes_ram: 0
+                      message_bytes_ready: 0
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 
+       message_stats.publish_details.rate: 
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 0
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 0
+                             messages_ram: 0
+                           messages_ready: 0
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 0
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 314599
+                  reductions_details.rate: 248.0
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: LQ-MAXLENG
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 5
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", 0, 0, 0, 0]
+                 backing_queue_status.len: 0
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 0
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 0
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 252
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 13400
+                            message_bytes: 0
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 0
+                        message_bytes_ram: 0
+                      message_bytes_ready: 0
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 
+       message_stats.publish_details.rate: 
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 0
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 0
+                             messages_ram: 0
+                           messages_ready: 0
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 0
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 313327
+                  reductions_details.rate: 247.0
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: LQ1
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 5
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 32769
+                  backing_queue_status.q1: 1
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 3
+                  backing_queue_status.q4: 1
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 252
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 21576
+                            message_bytes: 57
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 46
+                        message_bytes_ram: 57
+                      message_bytes_ready: 57
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 1
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 5
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 4
+                             messages_ram: 5
+                           messages_ready: 5
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 5
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 377247
+                  reductions_details.rate: 296.8
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: LQ2
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 2
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 16384
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 1
+                  backing_queue_status.q4: 1
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 256
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 19560
+                            message_bytes: 32
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 32
+                        message_bytes_ram: 32
+                      message_bytes_ready: 32
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 
+       message_stats.publish_details.rate: 
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 2
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 2
+                             messages_ram: 2
+                           messages_ready: 2
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 2
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 360888
+                  reductions_details.rate: 282.8
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: TOPIC1
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 3
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 3
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 3
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 245
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:32
+                                   memory: 20552
+                            message_bytes: 24
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 24
+                        message_bytes_ram: 24
+                      message_bytes_ready: 24
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 0
+           message_stats.ack_details.rate: 0.0
+                    message_stats.deliver: 0
+       message_stats.deliver_details.rate: 0.0
+                message_stats.deliver_get: 6
+   message_stats.deliver_get_details.rate: 0.0
+             message_stats.deliver_no_ack: 0
+message_stats.deliver_no_ack_details.rate: 0.0
+                        message_stats.get: 6
+           message_stats.get_details.rate: 0.0
+                  message_stats.get_empty: 0
+     message_stats.get_empty_details.rate: 0.0
+                 message_stats.get_no_ack: 0
+    message_stats.get_no_ack_details.rate: 0.0
+                    message_stats.publish: 3
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 3
+     message_stats.redeliver_details.rate: 0.0
+                                 messages: 3
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 3
+                             messages_ram: 3
+                           messages_ready: 3
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 3
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 489985
+                  reductions_details.rate: 290.8
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: TOPIC2
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 2
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 2
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 2
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 243
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 19936
+                            message_bytes: 10
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 10
+                        message_bytes_ram: 10
+                      message_bytes_ready: 10
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 0
+           message_stats.ack_details.rate: 0.0
+                    message_stats.deliver: 0
+       message_stats.deliver_details.rate: 0.0
+                message_stats.deliver_get: 2
+   message_stats.deliver_get_details.rate: 0.0
+             message_stats.deliver_no_ack: 0
+message_stats.deliver_no_ack_details.rate: 0.0
+                        message_stats.get: 2
+           message_stats.get_details.rate: 0.0
+                  message_stats.get_empty: 1
+     message_stats.get_empty_details.rate: 0.0
+                 message_stats.get_no_ack: 0
+    message_stats.get_no_ack_details.rate: 0.0
+                    message_stats.publish: 2
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 0
+     message_stats.redeliver_details.rate: 0.0
+                                 messages: 2
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 2
+                             messages_ram: 2
+                           messages_ready: 2
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 2
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 449056
+                  reductions_details.rate: 287.8
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: demohost
+                                     name: demoq
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 0
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 0
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 0
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 165
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 13288
+                            message_bytes: 0
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 0
+                        message_bytes_ram: 0
+                      message_bytes_ready: 0
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 
+       message_stats.publish_details.rate: 
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 0
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 0
+                             messages_ram: 0
+                           messages_ready: 0
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 0
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 203691
+                  reductions_details.rate: 246.4
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: ibm
+                                     name: ibmq1
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: 
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 0
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 0
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 0
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 33
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 13184
+                            message_bytes: 0
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 0
+                        message_bytes_ram: 0
+                      message_bytes_ready: 0
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 
+       message_stats.publish_details.rate: 
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 0
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 0
+                             messages_ram: 0
+                           messages_ready: 0
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 0
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 37538
+                  reductions_details.rate: 250.4
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+# rabbitmqadmin declare queue name=ibmq2 type=fanout --vhost ibm
+
+ERROR: Argument "type" is not recognised
+
+rabbitmqadmin --help for help
+
+# rabbitmqadmin declare queue name=ibmq2 durable=false
+queue declared
+# 
+# 
+# rabbitmqadmin declare exchange name=ex2 type=fanout --vhost=ibm
+*** Access refused: /api/exchanges/ibm/ex2
+
+# rabbitmqadmin declare exchange name=ex2 type=fanout --vhost=ibm -u bvr -p bvr123
+exchange declared
+# rabbitmqadmin.py export rabbit.definitions.json
+Exported definitions for localhost to "rabbit.definitions.json"
+# cat rabbit.definitions.jso
+cat: rabbit.definitions.jso: No such file or directory
+# cat rabbit.definitions.json 
+{"rabbit_version":"3.8.16","rabbitmq_version":"3.8.16","product_name":"RabbitMQ","product_version":"3.8.16","users":[{"name":"monitor","password_hash":"ymo9Nuu/275G+0PcZjIsNdH/9w2pKN9DlK/Fq4Va4mYJBANF","hashing_algorithm":"rabbit_password_hashing_sha256","tags":"monitoring","limits":{}},{"name":"guest","password_hash":"Az1DxK+/jECV8u7i/boPqqVv35WlSjnilPPs1RlIfXEKvuzt","hashing_algorithm":"rabbit_password_hashing_sha256","tags":"administrator","limits":{}},{"name":"bvr","password_hash":"ORCbElDN18kFJAkE2Kl6kuU7TM2BXEZl97iecVmpPui7E5Qi","hashing_algorithm":"rabbit_password_hashing_sha256","tags":"administrator","limits":{}},{"name":"demoroot","password_hash":"xYC1BxW00fhjOq02r8E9Ez1AUj5tbeCJlYqHHMCMMQWZUUbB","hashing_algorithm":"rabbit_password_hashing_sha256","tags":"administrator","limits":{}}],"vhosts":[{"name":"demohost"},{"name":"/"},{"name":"ibm"}],"permissions":[{"user":"guest","vhost":"demohost","configure":".*","write":".*","read":".*"},{"user":"bvr","vhost":"ibm","configure":".*","write":".*","read":".*"},{"user":"demoroot","vhost":"demohost","configure":".*","write":".*","read":".*"},{"user":"guest","vhost":"/","configure":".*","write":".*","read":".*"},{"user":"bvr","vhost":"demohost","configure":"^bvr-.*","write":".*","read":".*"}],"topic_permissions":[{"user":"bvr","vhost":"demohost","exchange":"amq.topic","write":"^bvr-.*","read":"^bvr-.*"}],"parameters":[{"value":{"max-connections":-1},"vhost":"ibm","component":"vhost-limits","name":"limits"}],"global_parameters":[{"name":"cluster_name","value":"rabbit@my-rabbit"},{"name":"internal_cluster_id","value":"rabbitmq-cluster-id-IhGn6f4yYJK3dFlHImOA7w"}],"policies":[],"queues":[{"name":"demoq","vhost":"demohost","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"ibmq2","vhost":"/","durable":false,"auto_delete":false,"arguments":{}},{"name":"TOPIC1","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"TOPIC2","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"LQ-DLQ","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-dead-letter-exchange":"sample.dlq","x-dead-letter-routing-key":"sampledlq","x-queue-type":"classic"}},{"name":"LQ1","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"LQ-MAXLENG","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-max-length":5,"x-queue-type":"classic"}},{"name":"HEAD2","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"FAN1","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"LQ2","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"FAN2","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"FAN3","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"HEAD1","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"ibmq1","vhost":"ibm","durable":true,"auto_delete":false,"arguments":{}}],"exchanges":[{"name":"demoex1","vhost":"demohost","type":"direct","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"sample.dlq","vhost":"/","type":"direct","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"sample.headers","vhost":"/","type":"headers","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"sample.direct","vhost":"/","type":"direct","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"sample.topic","vhost":"/","type":"topic","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"sample.fanout","vhost":"/","type":"fanout","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"ibmexchange1","vhost":"ibm","type":"direct","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"ex2","vhost":"ibm","type":"fanout","durable":true,"auto_delete":false,"internal":false,"arguments":{}}],"bindings":[{"source":"sample.direct","vhost":"/","destination":"LQ1","destination_type":"queue","routing_key":"samplekey1","arguments":{}},{"source":"sample.direct","vhost":"/","destination":"LQ2","destination_type":"queue","routing_key":"samplekey2","arguments":{}},{"source":"sample.fanout","vhost":"/","destination":"FAN1","destination_type":"queue","routing_key":"","arguments":{}},{"source":"sample.fanout","vhost":"/","destination":"FAN3","destination_type":"queue","routing_key":"","arguments":{}},{"source":"sample.fanout","vhost":"/","destination":"FAN2","destination_type":"queue","routing_key":"FAN2","arguments":{}},{"source":"sample.headers","vhost":"/","destination":"HEAD1","destination_type":"queue","routing_key":"","arguments":{"format":"pdf"}},{"source":"sample.headers","vhost":"/","destination":"HEAD2","destination_type":"queue","routing_key":"","arguments":{"format":"img"}},{"source":"sample.headers","vhost":"/","destination":"HEAD2","destination_type":"queue","routing_key":"","arguments":{"format":"png"}},{"source":"sample.topic","vhost":"/","destination":"TOPIC1","destination_type":"queue","routing_key":"*.ka.*","arguments":{}},{"source":"sample.topic","vhost":"/","destination":"TOPIC2","destination_type":"queue","routing_key":"*.mh.*","arguments":{}},{"source":"ibmexchange1","vhost":"ibm","destination":"ibmq1","destination_type":"queue","routing_key":"ibmkey","arguments":{}}]}# 
+# 
+# 
+# 
+# 
+# 
+# 
+# rabbitmqadin -q import rabbit.definition.json
+sh: 133: rabbitmqadin: not found
+# rabbitmqadmin -q import rabbit.definition.json                       
+Traceback (most recent call last):
+  File "/usr/local/bin/rabbitmqadmin", line 1184, in <module>
+    main()
+  File "/usr/local/bin/rabbitmqadmin", line 523, in main
+    method()
+  File "/usr/local/bin/rabbitmqadmin", line 710, in invoke_import
+    with open(path, 'rb') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'rabbit.definition.json'
+# 
+# 
+# 
+# 
+
+
+# rabbitmq-plugins list
+Listing plugins with pattern ".*" ...
+ Configured: E = explicitly enabled; e = implicitly enabled
+ | Status: * = running on rabbit@my-rabbit
+ |/
+[  ] rabbitmq_amqp1_0                  3.8.16
+[  ] rabbitmq_auth_backend_cache       3.8.16
+[  ] rabbitmq_auth_backend_http        3.8.16
+[  ] rabbitmq_auth_backend_ldap        3.8.16
+[  ] rabbitmq_auth_backend_oauth2      3.8.16
+[  ] rabbitmq_auth_mechanism_ssl       3.8.16
+[  ] rabbitmq_consistent_hash_exchange 3.8.16
+[  ] rabbitmq_event_exchange           3.8.16
+[  ] rabbitmq_federation               3.8.16
+[  ] rabbitmq_federation_management    3.8.16
+[  ] rabbitmq_jms_topic_exchange       3.8.16
+[E*] rabbitmq_management               3.8.16
+[e*] rabbitmq_management_agent         3.8.16
+[  ] rabbitmq_mqtt                     3.8.16
+[  ] rabbitmq_peer_discovery_aws       3.8.16
+[  ] rabbitmq_peer_discovery_common    3.8.16
+[  ] rabbitmq_peer_discovery_consul    3.8.16
+[  ] rabbitmq_peer_discovery_etcd      3.8.16
+[  ] rabbitmq_peer_discovery_k8s       3.8.16
+[E*] rabbitmq_prometheus               3.8.16
+[  ] rabbitmq_random_exchange          3.8.16
+[  ] rabbitmq_recent_history_exchange  3.8.16
+[  ] rabbitmq_sharding                 3.8.16
+[  ] rabbitmq_shovel                   3.8.16
+[  ] rabbitmq_shovel_management        3.8.16
+[  ] rabbitmq_stomp                    3.8.16
+[  ] rabbitmq_top                      3.8.16
+[  ] rabbitmq_tracing                  3.8.16
+[  ] rabbitmq_trust_store              3.8.16
+[e*] rabbitmq_web_dispatch             3.8.16
+[  ] rabbitmq_web_mqtt                 3.8.16
+[  ] rabbitmq_web_mqtt_examples        3.8.16
+[  ] rabbitmq_web_stomp                3.8.16
+[  ] rabbitmq_web_stomp_examples       3.8.16
+# 
+# 
+# rabbitmq-plugins list -v
+Listing plugins with pattern ".*" ...
+ Configured: E = explicitly enabled; e = implicitly enabled
+ | Status: * = running on rabbit@my-rabbit
+ |/
+[  ] rabbitmq_amqp1_0
+     Version:     	3.8.16
+     Dependencies:	[amqp_client,amqp10_common]
+     Description: 	AMQP 1.0 support for RabbitMQ
+[  ] rabbitmq_auth_backend_cache
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ Authentication Backend cache
+[  ] rabbitmq_auth_backend_http
+     Version:     	3.8.16
+     Dependencies:	[amqp_client]
+     Description: 	RabbitMQ HTTP Authentication Backend
+[  ] rabbitmq_auth_backend_ldap
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ LDAP Authentication Backend
+[  ] rabbitmq_auth_backend_oauth2
+     Version:     	3.8.16
+     Dependencies:	[cowlib,jose]
+     Description: 	OAuth 2 and JWT-based AuthN and AuthZ backend
+[  ] rabbitmq_auth_mechanism_ssl
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ SSL authentication (SASL EXTERNAL)
+[  ] rabbitmq_consistent_hash_exchange
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	Consistent Hash Exchange Type
+[  ] rabbitmq_event_exchange
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	Event Exchange Type
+[  ] rabbitmq_federation
+     Version:     	3.8.16
+     Dependencies:	[amqp_client]
+     Description: 	RabbitMQ Federation
+[  ] rabbitmq_federation_management
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_management,rabbitmq_federation]
+     Description: 	RabbitMQ Federation Management
+[  ] rabbitmq_jms_topic_exchange
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ JMS topic selector exchange plugin
+[E*] rabbitmq_management
+     Version:     	3.8.16
+     Dependencies:	[amqp_client,cowboy,cowlib,rabbitmq_web_dispatch,rabbitmq_management_agent]
+     Description: 	RabbitMQ Management Console
+[e*] rabbitmq_management_agent
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ Management Agent
+[  ] rabbitmq_mqtt
+     Version:     	3.8.16
+     Dependencies:	[amqp_client]
+     Description: 	RabbitMQ MQTT Adapter
+[  ] rabbitmq_peer_discovery_aws
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_peer_discovery_common,rabbitmq_aws]
+     Description: 	AWS-based RabbitMQ peer discovery backend
+[  ] rabbitmq_peer_discovery_common
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	Modules shared by various peer discovery backends
+[  ] rabbitmq_peer_discovery_consul
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_peer_discovery_common]
+     Description: 	Consult-based RabbitMQ peer discovery backend
+[  ] rabbitmq_peer_discovery_etcd
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_peer_discovery_common,eetcd,gun]
+     Description: 	etcd-based RabbitMQ peer discovery backend
+[  ] rabbitmq_peer_discovery_k8s
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_peer_discovery_common]
+     Description: 	Kubernetes-based RabbitMQ peer discovery backend
+[E*] rabbitmq_prometheus
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_management_agent,prometheus,rabbitmq_web_dispatch]
+     Description: 	
+[  ] rabbitmq_random_exchange
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ Random Exchange
+[  ] rabbitmq_recent_history_exchange
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ Recent History Exchange
+[  ] rabbitmq_sharding
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ Sharding Plugin
+[  ] rabbitmq_shovel
+     Version:     	3.8.16
+     Dependencies:	[amqp_client,amqp10_client]
+     Description: 	Data Shovel for RabbitMQ
+[  ] rabbitmq_shovel_management
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_management,rabbitmq_shovel]
+     Description: 	Management extension for the Shovel plugin
+[  ] rabbitmq_stomp
+     Version:     	3.8.16
+     Dependencies:	[amqp_client]
+     Description: 	RabbitMQ STOMP plugin
+[  ] rabbitmq_top
+     Version:     	3.8.16
+     Dependencies:	[amqp_client,rabbitmq_management]
+     Description: 	RabbitMQ Top
+[  ] rabbitmq_tracing
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_management]
+     Description: 	RabbitMQ message logging / tracing
+[  ] rabbitmq_trust_store
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	Client X.509 certificates trust store
+[e*] rabbitmq_web_dispatch
+     Version:     	3.8.16
+     Dependencies:	[cowboy]
+     Description: 	RabbitMQ Web Dispatcher
+[  ] rabbitmq_web_mqtt
+     Version:     	3.8.16
+     Dependencies:	[cowboy,rabbitmq_mqtt]
+     Description: 	RabbitMQ MQTT-over-WebSockets adapter
+[  ] rabbitmq_web_mqtt_examples
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_web_dispatch,rabbitmq_web_mqtt]
+     Description: 	Rabbit WEB-MQTT - examples
+[  ] rabbitmq_web_stomp
+     Version:     	3.8.16
+     Dependencies:	[cowboy,rabbitmq_stomp]
+     Description: 	RabbitMQ STOMP-over-WebSockets support
+[  ] rabbitmq_web_stomp_examples
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_web_dispatch,rabbitmq_web_stomp]
+     Description: 	Rabbit WEB-STOMP - examples
+# rabbitmq-plugins list -v management
+Listing plugins with pattern "management" ...
+ Configured: E = explicitly enabled; e = implicitly enabled
+ | Status: * = running on rabbit@my-rabbit
+ |/
+[  ] rabbitmq_federation_management
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_management,rabbitmq_federation]
+     Description: 	RabbitMQ Federation Management
+[E*] rabbitmq_management
+     Version:     	3.8.16
+     Dependencies:	[amqp_client,cowboy,cowlib,rabbitmq_web_dispatch,rabbitmq_management_agent]
+     Description: 	RabbitMQ Management Console
+[e*] rabbitmq_management_agent
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ Management Agent
+[  ] rabbitmq_shovel_management
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_management,rabbitmq_shovel]
+     Description: 	Management extension for the Shovel plugin
+# rabbitmq-plugins list -e rabbit
+Listing plugins with pattern "rabbit" ...
+ Configured: E = explicitly enabled; e = implicitly enabled
+ | Status: * = running on rabbit@my-rabbit
+ |/
+[E*] rabbitmq_management       3.8.16
+[e*] rabbitmq_management_agent 3.8.16
+[E*] rabbitmq_prometheus       3.8.16
+[e*] rabbitmq_web_dispatch     3.8.16
+# 
+# 
+# 
+# rabbitmq-plugins enable rabbitmq_shovel rabbitmq_shovel_management
+Enabling plugins on node rabbit@my-rabbit:
+rabbitmq_shovel
+rabbitmq_shovel_management
+The following plugins have been configured:
+  rabbitmq_management
+  rabbitmq_management_agent
+  rabbitmq_prometheus
+  rabbitmq_shovel
+  rabbitmq_shovel_management
+  rabbitmq_web_dispatch
+Applying plugin configuration to rabbit@my-rabbit...
+The following plugins have been enabled:
+  rabbitmq_shovel
+  rabbitmq_shovel_management
+
+started 2 plugins.
+# rabbitmq-plugins disable plugin_name
+Disabling plugins on node rabbit@my-rabbit:
+plugin_name
+The following plugins have been configured:
+  rabbitmq_management
+  rabbitmq_management_agent
+  rabbitmq_prometheus
+  rabbitmq_shovel
+  rabbitmq_shovel_management
+  rabbitmq_web_dispatch
+Applying plugin configuration to rabbit@my-rabbit...
+Plugin configuration unchanged.
+# 
+
+
+
+
+
+
+------
+
+
+docker run hello-world
+
+
+
+
+501  docker version
+  502  docker images
+  503  docker rmi -f 75b79f21486d 246db2517862
+  504  docker ps -a
+  505  docker rm -f bd5119f693e9
+  506  docker rmi -f 75b79f21486d 246db2517862
+  507  docker images
+  508  clear
+  509  docker images
+  510  docker ps -a
+  511  docker pull hello-world
+  512  docker run hello-world
+  513  docker images
+  514  docker ps -a
+  515  docker run hello-world
+  516  docker ps -a
+  517  docker info
+  518  docker run -it centos /bin/bash
+  519  docker ps -a
+  520  docker run -it e8b8c0f2607c /bin/bash
+  521  docker start e8b8c0f2607c
+  522  docker ps 
+  523  docker exec -it /bin/bash
+  524  docker exec -it e8b8c0f2607c /bin/bash
+  525  ls -l
+
+
+
+ 527  docker images
+  528  docker pull vishymails/tomcatimage:1.0
+  529  docker images
+  530  docker run vishymails/tomcatimage:1.0 -p 8080:8080 
+  531  docker run -p 8080:8080 vishymails/tomcatimage:1.0 
+  532  docker run -p 900:8080 vishymails/tomcatimage:1.0 
+  533  docker ps -a
+  534  docker images
+  535  docker history 38999a89a0fa
+  536  docker ps 
+  537  docker ps -a
+  538  docker start -d a75f0f0c1f5a
+  539  docker start  a75f0f0c1f5a
+  540  docker ps -a
+  541  docker rm -f a75f0f0c1f5a d00bb7e80bf5 066bc45e7b21
+  542  docker ps -a
+  543  docker run -d -p 8080:8080 vishymails/tomcatimage:1.0
+  544  docker ps -a
+
+
+
+
+
+
+Dockerfile
+-------------
+
+
+FROM ubuntu
+
+RUN apt-get update
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apache2
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apache2-utils
+
+RUN apt-get clean
+
+EXPOSE 80
+
+CMD ["apache2ctl", "-D", "FOREGROUND"]
+
+# docker build -t sgapache:1.0 .
+
+docker run -p 80:80 sgapache:1.0
+
+
+
+
+ 526  docker run -d --hostname my-rabbit --name rabbitmq -p 8080:15672 rabbitmq:3-management
+  527  docker start 2c48b4d3f9a5
+  528  docker ps
+  529  docker exec -it 2c48b4d3f9a5 sh
+
+
+
+
+
+
+ 536  docker images
+  537  docker run -d --hostname rabbit1 --name rabbit1 -e RABBITMQ_ERLANG_COOKIE='rabbitcluster' -p 30000:5672 -p 30001:15672 rabbitmq:management
+  538  docker ps 
+  539  docker run -d --hostname rabbit2 --name rabbit2 -e RABBITMQ_ERLANG_COOKIE='rabbitcluster' -p 30002:5672 -p 30003:15672 rabbitmq:management
+  540  docker ps 
+  541  docker rm -f ba8aa55639f4
+  542  docker run -d --hostname rabbit2 --name rabbit2 --link rabbit1:rabbit1 -e RABBITMQ_ERLANG_COOKIE='rabbitcluster' -p 30002:5672 -p 30003:15672 rabbitmq:management
+  543  docker run -d --hostname rabbit3 --name rabbit3 --link rabbit1:rabbit1 --link rabbit2:rabbit2 -e RABBITMQ_ERLANG_COOKIE='rabbitcluster' -p 30004:5672 -p 30005:15672 rabbitmq:management
+  544  docker exec -it rabbit2 \bash
+  545  docker exec -it rabbit3 \bash
+  546  history
+
+
+
+INSIDE RABBIT2 AND 3 
+---------------------------------
+
+rabbitmqctl stop_app
+rabbitmqctl join_cluster rabbit@rabbit1
+rabbitmqctl 
+
+
+
+
+
+rabbitmq-diagnostics alarms
+   10  rabbitmq-diagnostics check_alarams
+   11  rabbitmq-diagnostics check_alarms
+   12  rabbitmq-diagnostics check_port_connectivity
+   13  rabbitmq-diagnostics check_port_listener 5672
+   14  rabbitmq-diagnostics check_port_listener mqtt
+   15  rabbitmq-diagnostics check_running
+   16  rabbitmq-diagnostics check_virtual_hosts --timeout 60
+   17  rabbitmq-diagnostics discover_peers --timeout 60
+   18  rabbitmq-diagnostics erlang_cookie_hash -q
+   19  rabbitmq-diagnostics erlang_version -q
+   20  rabbitmq-diagnostics is_booting
+   21  rabbitmq-diagnostics is_running
+   22  rabbitmq-diagnostics listeners
+   23  rabbitmq-diagnostics log_tail -number 100
+   24  rabbitmq-diagnostics log_tail --number 100
+   25  rabbitmq-diagnostics log_tail_stream --duration 60
+   26  rabbitmq-diagnostics maybe_stuck -q
+   27  rabbitmq-diagnostics memory_breakdown --unit gigabytes
+   28  rabbitmq-diagnostics observer --interval 10
+   29  rabbitmq-diagnostics runtime_thread_stats --sample-interval 10
+   30  rabbitmq-diagnostics server_version -q
+   31  rabbitmq-diagnostics tls_versions -q
+   32  rabbitmq-diagnostics log_location -a
+   33  history
+
+package com.ibm.rabbitmq;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+
+public class Send {
+
+    private final static String QUEUE_NAME = "Vivek";
+
+    public static void main(String[] argv) throws Exception {
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost("localhost");
+        try (Connection connection = factory.newConnection();
+             Channel channel = connection.createChannel()) {
+            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+            String message = "Hello World!";
+            channel.basicPublish("", QUEUE_NAME, null, message.getBytes("UTF-8"));
+            System.out.println(" [x] Sent '" + message + "'");
+            //Thread.sleep(30000000);
+        }
+    }
+}
+
+
+
+
+package com.ibm.rabbitmq;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DeliverCallback;
+
+public class Recv {
+
+    private final static String QUEUE_NAME = "hello";
+
+    public static void main(String[] argv) throws Exception {
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost("localhost");
+       
+        Connection connection = factory.newConnection();
+        Channel channel = connection.createChannel();
+
+        channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+        System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+
+        DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+            String message = new String(delivery.getBody(), "UTF-8");
+            System.out.println(" [x] Received '" + message + "'");
+        };
+        channel.basicConsume(QUEUE_NAME, true, deliverCallback, consumerTag -> { });
+    }
+}
+
+
+
+
+
+
+
+
+rabbitmqctl -help
+
+Usage
+
+rabbitmqctl [--node <node>] [--timeout <timeout>] [--longnames] [--quiet] <command> [<command options>]
+
+Available commands:
+
+Help:
+
+   autocomplete                  Provides command name autocomplete variants
+   help                          Displays usage information for a command
+   version                       Displays CLI tools version
+
+Nodes:
+
+   await_startup                 Waits for the RabbitMQ application to start on the target node
+   reset                         Instructs a RabbitMQ node to leave the cluster and return to its virgin state
+   rotate_logs                   Instructs the RabbitMQ node to perform internal log rotation
+   shutdown                      Stops RabbitMQ and its runtime (Erlang VM). Monitors progress for local nodes. Does not require a PID file path.
+   start_app                     Starts the RabbitMQ application but leaves the runtime (Erlang VM) running
+   stop                          Stops RabbitMQ and its runtime (Erlang VM). Requires a local node pid file path to monitor progress.
+   stop_app                      Stops the RabbitMQ application, leaving the runtime (Erlang VM) running
+   wait                          Waits for RabbitMQ node startup by monitoring a local PID file. See also 'rabbitmqctl await_online_nodes'
+
+Cluster:
+
+   await_online_nodes            Waits for <count> nodes to join the cluster
+   change_cluster_node_type      Changes the type of the cluster node
+   cluster_status                Displays all the nodes in the cluster grouped by node type, together with the currently running nodes
+   force_boot                    Forces node to start even if it cannot contact or rejoin any of its previously known peers
+   force_reset                   Forcefully returns a RabbitMQ node to its virgin state
+   forget_cluster_node           Removes a node from the cluster
+   join_cluster                  Instructs the node to become a member of the cluster that the specified node is in
+   rename_cluster_node           Renames cluster nodes in the local database
+   update_cluster_nodes          Instructs a cluster member node to sync the list of known cluster members from <seed_node>
+
+Replication:
+
+   cancel_sync_queue             Instructs a synchronising mirrored queue to stop synchronising itself
+   sync_queue                    Instructs a mirrored queue with unsynchronised mirrors (follower replicas) to synchronise them
+
+Users:
+
+   add_user                      Creates a new user in the internal database. This user will have no permissions for any virtual hosts by default.
+   authenticate_user             Attempts to authenticate a user. Exits with a non-zero code if authentication fails.
+   change_password               Changes the user password
+   clear_password                Clears (resets) password and disables password login for a user
+   clear_user_limits             Clears user connection/channel limits
+   delete_user                   Removes a user from the internal database. Has no effect on users provided by external backends such as LDAP
+   list_user_limits              Displays configured user limits
+   list_users                    List user names and tags
+   set_user_limits               Sets user limits
+   set_user_tags                 Sets user tags
+
+Access Control:
+
+   clear_permissions             Revokes user permissions for a vhost
+   clear_topic_permissions       Clears user topic permissions for a vhost or exchange
+   list_permissions              Lists user permissions in a virtual host
+   list_topic_permissions        Lists topic permissions in a virtual host
+   list_user_permissions         Lists permissions of a user across all virtual hosts
+   list_user_topic_permissions   Lists user topic permissions
+   list_vhosts                   Lists virtual hosts
+   set_permissions               Sets user permissions for a vhost
+   set_topic_permissions         Sets user topic permissions for an exchange
+
+Monitoring, observability and health checks:
+
+   list_bindings                 Lists all bindings on a vhost
+   list_channels                 Lists all channels in the node
+   list_ciphers                  Lists cipher suites supported by encoding commands
+   list_connections              Lists AMQP 0.9.1 connections for the node
+   list_consumers                Lists all consumers for a vhost
+   list_exchanges                Lists exchanges
+   list_hashes                   Lists hash functions supported by encoding commands
+   list_node_auth_attempt_stats  Lists authentication attempts on the target node
+   list_queues                   Lists queues and their properties
+   list_unresponsive_queues      Tests queues to respond within timeout. Lists those which did not respond
+   ping                          Checks that the node OS process is up, registered with EPMD and CLI tools can authenticate with it
+   report                        Generate a server status report containing a concatenation of all server status information for support purposes
+   schema_info                   Lists schema database tables and their properties
+   status                        Displays status of a node
+
+Parameters:
+
+   clear_global_parameter        Clears a global runtime parameter
+   clear_parameter               Clears a runtime parameter.
+   list_global_parameters        Lists global runtime parameters
+   list_parameters               Lists runtime parameters for a virtual host
+   set_global_parameter          Sets a runtime parameter.
+   set_parameter                 Sets a runtime parameter.
+
+Policies:
+
+   clear_operator_policy         Clears an operator policy
+   clear_policy                  Clears (removes) a policy
+   list_operator_policies        Lists operator policy overrides for a virtual host
+   list_policies                 Lists all policies in a virtual host
+   set_operator_policy           Sets an operator policy that overrides a subset of arguments in user policies
+   set_policy                    Sets or updates a policy
+
+Virtual hosts:
+
+   add_vhost                     Creates a virtual host
+   clear_vhost_limits            Clears virtual host limits
+   delete_vhost                  Deletes a virtual host
+   list_vhost_limits             Displays configured virtual host limits
+   restart_vhost                 Restarts a failed vhost data stores and queues
+   set_vhost_limits              Sets virtual host limits
+   trace_off                     
+   trace_on                      
+
+Configuration and Environment:
+
+   decode                        Decrypts an encrypted configuration value
+   encode                        Encrypts a sensitive configuration value
+   environment                   Displays the name and value of each variable in the application environment for each running application
+   set_cluster_name              Sets the cluster name
+   set_disk_free_limit           Sets the disk_free_limit setting
+   set_log_level                 Sets log level in the running node
+   set_vm_memory_high_watermark  Sets the vm_memory_high_watermark setting
+
+Definitions:
+
+   export_definitions            Exports definitions in JSON or compressed Erlang Term Format.
+   import_definitions            Imports definitions in JSON or compressed Erlang Term Format.
+
+Feature flags:
+
+   enable_feature_flag           Enables a feature flag or all supported feature flags on the target node
+   list_feature_flags            Lists feature flags
+
+Operations:
+
+   close_all_connections         Instructs the broker to close all connections for the specified vhost or entire RabbitMQ node
+   close_all_user_connections    Instructs the broker to close all connections of the specified user
+   close_connection              Instructs the broker to close the connection associated with the Erlang process id
+   eval                          Evaluates a snippet of Erlang code on the target node
+   eval_file                     Evaluates a file that contains a snippet of Erlang code on the target node
+   exec                          Evaluates a snippet of Elixir code on the CLI node
+   force_gc                      Makes all Erlang processes on the target node perform/schedule a full sweep garbage collection
+   resume_listeners              Resumes client connection listeners making them accept client connections again
+   suspend_listeners             Suspends client connection listeners so that no new client connections are accepted
+
+Queues:
+
+   delete_queue                  Deletes a queue
+   purge_queue                   Purges a queue (removes all messages in it)
+
+Deprecated:
+
+   hipe_compile                  DEPRECATED. This command is a no-op. HiPE is no longer supported by modern Erlang versions
+   node_health_check             DEPRECATED. Performs intrusive, opinionated health checks on a fully booted node. See https://www.rabbitmq.com/monitoring.html#health-checks instead
+
+Use 'rabbitmqctl help <command>' to learn more about a specific command
+# rabbitmq-diagnostics status --help
+
+Usage
+
+rabbitmq-diagnostics [--node <node>] [--longnames] [--quiet] status [--unit <unit>] [--timeout <timeout>]
+
+Displays status of a node.
+
+
+Arguments and Options
+
+--unit <bytes | mb | gb>
+	byte multiple (bytes, megabytes, gigabytes) to use
+
+--formatter <json | erlang>
+	alternative formatter (JSON, Erlang terms)
+
+
+Relevant Doc Guides
+
+ * https://rabbitmq.com/monitoring.html
+
+
+General Options
+
+The following options are accepted by most or all commands.
+
+short            | long          | description
+-----------------|---------------|--------------------------------
+-?               | --help        | displays command help
+-n <node>        | --node <node> | connect to node <node>
+-l               | --longnames   | use long host names
+-t               | --timeout <n> | for commands that support it, operation timeout in seconds
+-q               | --quiet       | suppress informational messages
+-s               | --silent      | suppress informational messages
+                                 | and table header row
+-p               | --vhost       | for commands that are scoped to a virtual host,
+                 |               | virtual host to use
+                 | --formatter   | alternative result formatter to use
+                                 | if supported: json, pretty_table, table, csv, erlang
+                                   not all commands support all (or any) alternative formatters.
+
+# rabbitmq-diagnostics help status
+
+Usage
+
+rabbitmq-diagnostics [--node <node>] [--longnames] [--quiet] status [--unit <unit>] [--timeout <timeout>]
+
+Displays status of a node.
+
+
+Arguments and Options
+
+--unit <bytes | mb | gb>
+	byte multiple (bytes, megabytes, gigabytes) to use
+
+--formatter <json | erlang>
+	alternative formatter (JSON, Erlang terms)
+
+
+Relevant Doc Guides
+
+ * https://rabbitmq.com/monitoring.html
+
+
+General Options
+
+The following options are accepted by most or all commands.
+
+short            | long          | description
+-----------------|---------------|--------------------------------
+-?               | --help        | displays command help
+-n <node>        | --node <node> | connect to node <node>
+-l               | --longnames   | use long host names
+-t               | --timeout <n> | for commands that support it, operation timeout in seconds
+-q               | --quiet       | suppress informational messages
+-s               | --silent      | suppress informational messages
+                                 | and table header row
+-p               | --vhost       | for commands that are scoped to a virtual host,
+                 |               | virtual host to use
+                 | --formatter   | alternative result formatter to use
+                                 | if supported: json, pretty_table, table, csv, erlang
+                                   not all commands support all (or any) alternative formatters.
+
+# rabbitmqctl add_user bvr bvr
+Adding user "bvr" ...
+Done. Don't forget to grant the user permissions to some virtual hosts! See 'rabbitmqctl help set_permissions' to learn more.
+# rabbitmqctl authenticate_user bvr bvr
+Authenticating user "bvr" ...
+Success
+# 
+# 
+# 
+# rabbitmqctl change_password bvr bvr123
+Changing password for user "bvr" ...
+# rabbitmqctl authenticate_user bvr bvr
+Authenticating user "bvr" ...
+Error:
+Error: failed to authenticate user "bvr"
+user 'bvr' - invalid credentials
+# rabbitmqctl list_users
+Listing users ...
+user	tags
+monitor	[monitoring]
+guest	[administrator]
+bvr	[]
+demoroot	[administrator]
+root	[administrator]
+# rabbitmqctl delete_user root
+Deleting user "root" ...
+# rabbitmqctl set_user_tags bvr administrator
+Setting tags for user "bvr" to [administrator] ...
+# 
+# 
+# 
+# history 
+sh: 22: history: not found
+# 
+
+
+
+
+
+# rabbitmqctl clear_permissions -p demohost bvr
+Clearing permissions for user "bvr" in vhost "demohost" ...
+# rabbitmqctl list_permissions -p demohost
+Listing permissions for vhost "demohost" ...
+user	configure	write	read
+guest	.*	.*	.*
+demoroot	.*	.*	.*
+# rabbitmqctl list_user_permissions bvr
+Listing permissions for user "bvr" ...
+
+# rabbitmqctl list_vhosts
+Listing vhosts ...
+name
+demohost
+/
+# rabbitmqctl set_permissions -p demohost bvr "^bvr-.*" ".*" ".*"
+Setting permissions for user "bvr" in vhost "demohost" ...
+# rabbitmqctl list_topic_user_permissions bvr
+
+Command 'list_topic_user_permissions' not found. 
+Did you mean 'list_user_topic_permissions'? 
+
+# rabbitmqctl list_user_topic_permisssions bvr
+
+Command 'list_user_topic_permisssions' not found. 
+Did you mean 'list_user_topic_permissions'? 
+
+# rabbitmqctl list_user_topic_permissions bvr
+Listing topic permissions for user "bvr" ...
+
+# rabbitmqctl set_topic_permissions -p demohost bvr amq.topic "^bvr-.*" "^bvr-.*"
+Setting topic permissions on "amq.topic" for user "bvr" in vhost "demohost" ...
+# 
+
+
+
+
+# rabbitmqctl list_bindings -p / sample.direct LQ1
+Error (argument validation): Info key(s) LQ1,sample.direct are not supported
+Arguments given:
+	list_bindings -p / sample.direct LQ1
+
+Usage
+
+rabbitmqctl [--node <node>] [--longnames] [--quiet] list_bindings [--vhost <vhost>] [--no-table-headers] [<column> ...] [--timeout <timeout>]
+# rabbitmqctl list_bindings --vhost / 
+Listing bindings for vhost /...
+source_name	source_kind	destination_name	destination_kind	routing_key	arguments
+	exchange	TOPIC1	queue	TOPIC1	[]
+	exchange	TOPIC2	queue	TOPIC2	[]
+	exchange	LQ-DLQ	queue	LQ-DLQ	[]
+	exchange	LQ1	queue	LQ1	[]
+	exchange	LQ-MAXLENG	queue	LQ-MAXLENG	[]
+	exchange	HEAD2	queue	HEAD2	[]
+	exchange	FAN1	queue	FAN1	[]
+	exchange	LQ2	queue	LQ2	[]
+	exchange	FAN2	queue	FAN2	[]
+	exchange	FAN3	queue	FAN3	[]
+	exchange	HEAD1	queue	HEAD1	[]
+sample.direct	exchange	LQ1	queue	samplekey1	[]
+sample.direct	exchange	LQ2	queue	samplekey2	[]
+sample.fanout	exchange	FAN1	queue		[]
+sample.fanout	exchange	FAN3	queue		[]
+sample.fanout	exchange	FAN2	queue	FAN2	[]
+sample.headers	exchange	HEAD1	queue		[{"format","pdf"}]
+sample.headers	exchange	HEAD2	queue		[{"format","img"}]
+sample.headers	exchange	HEAD2	queue		[{"format","png"}]
+sample.topic	exchange	TOPIC1	queue	*.ka.*	[]
+sample.topic	exchange	TOPIC2	queue	*.mh.*	[]
+# rabbitmqctl list_exchanges --vhost / 
+Listing exchanges for vhost / ...
+name	type
+sample.dlq	direct
+sample.headers	headers
+amq.direct	direct
+sample.direct	direct
+sample.topic	topic
+amq.match	headers
+amq.fanout	fanout
+amq.rabbitmq.trace	topic
+	direct
+amq.topic	topic
+amq.headers	headers
+sample.fanout	fanout
+# 
+# 
+# rabbitmqctl list_hashes
+Listing supported hash algorithms ...
+[sha,sha224,sha256,sha384,sha512,sha3_224,sha3_256,sha3_384,sha3_512,blake2b,
+ blake2s,md4,md5,ripemd160]
+# 
+# 
+# 
+# rabbitmqctl list_queues --vhost /
+Timeout: 60.0 seconds ...
+Listing queues for vhost / ...
+name	messages
+TOPIC1	3
+TOPIC2	2
+LQ-DLQ	0
+LQ1	5
+LQ-MAXLENG	0
+HEAD2	1
+FAN1	2
+LQ2	2
+FAN2	2
+FAN3	2
+HEAD1	1
+# rabbitmqctl list_unresponsive_queues 
+Listing unresponsive queues for vhost / ...
+# 
+# 
+# rabbitmqctl ping -n rabbit@my-rabbit
+Will ping rabbit@my-rabbit. This only checks if the OS process is running and registered with epmd. Timeout: 60000 ms.
+Ping succeeded
+# 
+# 
+# 
+# 
+# rabbitmqctl schema_info      
+Asking node rabbit@my-rabbit to report its schema...
+name	cookie	active_replicas	user_properties
+rabbit_user_permission	{{1621837054927439800,-576460752303422847,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_topic_trie_edge	{{1621837055015949900,-576460752303421983,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_queue	{{1621837055077832700,-576460752303421311,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+rabbit_semi_durable_route	{{1621837054983202700,-576460752303422367,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+tracked_connection_table_per_user_on_node_rabbit@my-rabbit	{{1621837056402273300,-576460752303422973,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+tracked_connection_on_node_rabbit@my-rabbit	{{1621837056378454000,-576460752303423069,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+tracked_channel_on_node_rabbit@my-rabbit	{{1621837056358826300,-576460752303423261,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+schema	{{1621837054848203900,-576460752303423071,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_exchange_serial	{{1621837055052882600,-576460752303421599,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_route	{{1621837054994926600,-576460752303422271,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+rabbit_exchange	{{1621837055039143600,-576460752303421695,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+rabbit_vhost	{{1621837054944111100,-576460752303422655,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+mirrored_sup_childspec	{{1621837055091776500,-576460752303421119,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_listener	{{1621837054952012400,-576460752303422559,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+gm_group	{{1621837055084524700,-576460752303421215,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+rabbit_topic_permission	{{1621837054935387000,-576460752303422751,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_topic_trie_binding	{{1621837055022714600,-576460752303421887,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_reverse_route	{{1621837055002373300,-576460752303422175,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_durable_route	{{1621837054962924800,-576460752303422463,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+tracked_connection_per_vhost_on_node_rabbit@my-rabbit	{{1621837056385605700,-576460752303423390,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_user	{{1621837054918347000,-576460752303422943,1}, rabbit@my-rabbit}[rabbit@my-rabbit]	[]
+rabbit_topic_trie_node	{{1621837055009264100,-576460752303422079,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_durable_queue	{{1621837055068298200,-576460752303421407,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_durable_exchange	{{1621837055029237300,-576460752303421791,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+tracked_channel_table_per_user_on_node_rabbit@my-rabbit	{{1621837056369456000,-576460752303423165,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_runtime_parameters	{{1621837055059342500,-576460752303421503,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+rabbit_node_maintenance_states	{{1621837055525257200,-576460752303423485,1}, rabbit@my-rabbit}	[rabbit@my-rabbit]	[]
+# rabbitmqctl schema+info name active_replicas 
+
+Command 'schema+info' not found. 
+Did you mean 'schema_info'? 
+
+
+rabbitmq-service.bat remove
+rabbitmq-service.bat install
+rabbitmq-service.bat start
+
+
+# rabbitmqctl schema_info name active_replicas
+Asking node rabbit@my-rabbit to report its schema...
+name	active_replicas
+rabbit_user_permission	[rabbit@my-rabbit]
+rabbit_topic_trie_edge	[rabbit@my-rabbit]
+rabbit_queue	[rabbit@my-rabbit]
+rabbit_semi_durable_route	[rabbit@my-rabbit]
+tracked_connection_table_per_user_on_node_rabbit@my-rabbit	[rabbit@my-rabbit]
+tracked_connection_on_node_rabbit@my-rabbit	[rabbit@my-rabbit]
+tracked_channel_on_node_rabbit@my-rabbit	[rabbit@my-rabbit]
+schema	[rabbit@my-rabbit]
+rabbit_exchange_serial	[rabbit@my-rabbit]
+rabbit_route	[rabbit@my-rabbit]
+rabbit_exchange	[rabbit@my-rabbit]
+rabbit_vhost	[rabbit@my-rabbit]
+mirrored_sup_childspec	[rabbit@my-rabbit]
+rabbit_listener	[rabbit@my-rabbit]
+gm_group	[rabbit@my-rabbit]
+rabbit_topic_permission	[rabbit@my-rabbit]
+rabbit_topic_trie_binding	[rabbit@my-rabbit]
+rabbit_reverse_route	[rabbit@my-rabbit]
+rabbit_durable_route	[rabbit@my-rabbit]
+tracked_connection_per_vhost_on_node_rabbit@my-rabbit	[rabbit@my-rabbit]
+rabbit_user	[rabbit@my-rabbit]
+rabbit_topic_trie_node	[rabbit@my-rabbit]
+rabbit_durable_queue	[rabbit@my-rabbit]
+rabbit_durable_exchange	[rabbit@my-rabbit]
+tracked_channel_table_per_user_on_node_rabbit@my-rabbit	[rabbit@my-rabbit]
+rabbit_runtime_parameters	[rabbit@my-rabbit]
+rabbit_node_maintenance_states	[rabbit@my-rabbit]
+# 
+# 
+# 
+# rabbitmqctl list_parameters
+Listing runtime parameters for vhost "/" ...
+
+# rabbitmqctl list_policies
+Listing policies for vhost "/" ...
+
+# rabbitmqctl add_vhost IBM
+Adding vhost "IBM" ...
+# rabbitmqctl clear_vhost_limits -p IBM
+Clearing vhost "IBM" limits ...
+Error:
+Parameter does not exist
+# rabbitmqctl delete_vhost IBM
+Deleting vhost "IBM" ...
+# rabbitmqctl restart_vhost demohost
+Error (argument validation): too many arguments.
+Arguments given:
+	restart_vhost demohost
+
+Usage
+
+rabbitmqctl [--node <node>] [--longnames] [--quiet] restart_vhost [--vhost <vhost>] [--timeout <timeout>]
+# rabbitmqctl restart_vhost --vhost demohost
+Trying to restart vhost 'demohost' on node 'rabbit@my-rabbit' ...
+Vhost 'demohost' is already running on node 'rabbit@my-rabbit'
+# 
+# 
+# 
+# 
+# rabbitmqctl add_vhost ibm
+Adding vhost "ibm" ...
+# 
+# 
+# rabbitmqctl set_vhost_limits -p ibm '{"max-connections": 50}'
+Setting vhost limits to "{"max-connections": 50}" for vhost "ibm" ...
+# rabbitmqctl set_vhost_limits -p ibm '{"max-queues": 256}'
+Setting vhost limits to "{"max-queues": 256}" for vhost "ibm" ...
+# rabbitmqctl set_vhost_limits -p ibm '{"max-connections": -1}'
+Setting vhost limits to "{"max-connections": -1}" for vhost "ibm" ...
+# 
+# 
+# rabbitmqadmin declare exchange --vhost=ibm name=ibmhost1 type=direct
+*** Access refused: /api/exchanges/ibm/ibmhost1
+
+
+wget http://127.0.0.1:15672/cli/rabbitmqadmin
+chmod +x rabbitmqadmin
+mv rabbitmqadmin /etc/rabbitmq
+
+
+
+Summary:
+
+Other answers are good alternatives to what was asked for. Below are commands you can use from the command line.
+
+First, do all the necessary prep work, e.g. install rabbit, rabbitmqadmin, and rabbitctl. The idea is to use commands from rabbitmqctl and rabbitmqadmin. You can see some command examples: https://www.rabbitmq.com/management-cli.html
+
+Example Commands/Setup:
+
+The following commands should give you the majority if not all of what you need:
+
+# Get the cli and make it available to use.
+wget http://127.0.0.1:15672/cli/rabbitmqadmin
+chmod +x rabbitmqadmin
+mv rabbitmqadmin /etc/rabbitmq
+
+Add a user and permissions
+
+rabbitmqctl add_user bvr bvr123
+rabbitmqctl set_user_tags bvr bvr123
+rabbitmqctl set_permissions -p / bvr ".*" ".*" ".*"
+
+Make a virtual host and Set Permissions
+
+rabbitmqctl add_vhost Some_Virtual_Host
+rabbitmqctl set_permissions -p Some_Virtual_Host guest ".*" ".*" ".*"
+
+
+
+
+# chmod +x rabbitmqadmin
+chmod: cannot access 'rabbitmqadmin': No such file or directory
+
+
+
+# rabbitmqctl set_permissions -p ibm bvr ".*" ".*" ".*"
+Setting permissions for user "bvr" in vhost "ibm" ...
+# rabbitmqadmin declare exchange --vhost=ibm name=ibmexchange1 type=direct
+*** Access refused: /api/exchanges/ibm/ibmexchange1
+
+# rabbitmqadmin declare exchange --vhost=ibm name=ibmexchange1 type=direct -u bvr -p bvr
+*** Access refused: /api/exchanges/ibm/ibmexchange1
+
+# rabbitmqadmin declare exchange --vhost=ibm name=ibmexchange1 type=direct -u bvr -p bvr123
+exchange declared
+# 
+# 
+# 
+# rabbitmqadmin declare queue --vhost=ibm name=ibmq1 durable=true         
+*** Access refused: /api/queues/ibm/ibmq1
+
+# rabbitmqadmin declare queue --vhost=ibm name=ibmq1 durable=true -u bvr -p bvr123
+queue declared
+# rabbitmqadmin --vhost=ibm declare binding source=ibmexchange1 destination_type=queue destination=ibmq1 routing_key=ibmkey
+*** Access refused: /api/bindings/ibm/e/ibmexchange1/q/ibmq1
+
+# rabbitmqadmin --vhost=ibm declare binding source=ibmexchange1 destination_type=queue destination=ibmq1 routing_key=ibmkey -u bvr -p bvr123
+binding declared
+# 
+
+
+
+//FOR WINDOWS 
+
+RENAME THE FILE TO .PY 
+
+rabbitmqadmin.py declare exchange --vhost=Some_Virtual_Host name=some_exchange type=direct
+
+
+
+# 
+# rabbitmqadmin -V ibm list exchanges
++--------------------+---------+
+|        name        |  type   |
++--------------------+---------+
+|                    | direct  |
+| amq.direct         | direct  |
+| amq.fanout         | fanout  |
+| amq.headers        | headers |
+| amq.match          | headers |
+| amq.rabbitmq.trace | topic   |
+| amq.topic          | topic   |
+| ibmexchange1       | direct  |
++--------------------+---------+
+# 
+# 
+# rabbitmqctl list_exchanges --vhost ibm
+Listing exchanges for vhost ibm ...
+name	type
+amq.match	headers
+amq.headers	headers
+amq.fanout	fanout
+ibmexchange1	direct
+amq.rabbitmq.trace	topic
+	direct
+amq.direct	direct
+amq.topic	topic
+# 
+# 
+# rabbitmqadmin list queues --vhost ibm
++-------+----------+
+| name  | messages |
++-------+----------+
+| ibmq1 | 0        |
++-------+----------+
+# rabbitmqadmin -f long -d 3 list queues 
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: FAN1
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 2
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 2
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 2
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 248
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:32
+                                   memory: 19880
+                            message_bytes: 38
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 38
+                        message_bytes_ram: 38
+                      message_bytes_ready: 38
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 1
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 2
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 2
+                             messages_ram: 2
+                           messages_ready: 2
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 2
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 420021
+                  reductions_details.rate: 287.6
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: FAN2
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 2
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 2
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 2
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 249
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 19848
+                            message_bytes: 38
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 38
+                        message_bytes_ram: 38
+                      message_bytes_ready: 38
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 1
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 2
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 2
+                             messages_ram: 2
+                           messages_ready: 2
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 2
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 422839
+                  reductions_details.rate: 287.4
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: FAN3
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 2
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 2
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 2
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 249
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 19880
+                            message_bytes: 38
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 38
+                        message_bytes_ram: 38
+                      message_bytes_ready: 38
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 1
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 2
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 2
+                             messages_ram: 2
+                           messages_ready: 2
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 2
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 423096
+                  reductions_details.rate: 287.6
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: HEAD1
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 1
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 1
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 1
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 233
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 19344
+                            message_bytes: 32
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 32
+                        message_bytes_ram: 32
+                      message_bytes_ready: 32
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 1
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 1
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 1
+                             messages_ram: 1
+                           messages_ready: 1
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 1
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 367894
+                  reductions_details.rate: 284.8
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: HEAD2
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 1
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 1
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 1
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 233
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 19352
+                            message_bytes: 34
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 34
+                        message_bytes_ram: 34
+                      message_bytes_ready: 34
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 1
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 1
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 1
+                             messages_ram: 1
+                           messages_ready: 1
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 1
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 363520
+                  reductions_details.rate: 284.6
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: LQ-DLQ
+                                     type: classic
+         arguments.x-dead-letter-exchange: sample.dlq
+      arguments.x-dead-letter-routing-key: sampledlq
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", 0, 0, 0, 0]
+                 backing_queue_status.len: 0
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 0
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 0
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 253
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 13600
+                            message_bytes: 0
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 0
+                        message_bytes_ram: 0
+                      message_bytes_ready: 0
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 
+       message_stats.publish_details.rate: 
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 0
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 0
+                             messages_ram: 0
+                           messages_ready: 0
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 0
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 314599
+                  reductions_details.rate: 248.0
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: LQ-MAXLENG
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 5
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", 0, 0, 0, 0]
+                 backing_queue_status.len: 0
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 0
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 0
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 252
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 13400
+                            message_bytes: 0
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 0
+                        message_bytes_ram: 0
+                      message_bytes_ready: 0
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 
+       message_stats.publish_details.rate: 
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 0
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 0
+                             messages_ram: 0
+                           messages_ready: 0
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 0
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 313327
+                  reductions_details.rate: 247.0
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: LQ1
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 5
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 32769
+                  backing_queue_status.q1: 1
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 3
+                  backing_queue_status.q4: 1
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 252
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 21576
+                            message_bytes: 57
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 46
+                        message_bytes_ram: 57
+                      message_bytes_ready: 57
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 1
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 5
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 4
+                             messages_ram: 5
+                           messages_ready: 5
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 5
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 377247
+                  reductions_details.rate: 296.8
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: LQ2
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 2
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 16384
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 1
+                  backing_queue_status.q4: 1
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 256
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 19560
+                            message_bytes: 32
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 32
+                        message_bytes_ram: 32
+                      message_bytes_ready: 32
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 
+       message_stats.publish_details.rate: 
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 2
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 2
+                             messages_ram: 2
+                           messages_ready: 2
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 2
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 360888
+                  reductions_details.rate: 282.8
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: TOPIC1
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 3
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 3
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 3
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 245
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:32
+                                   memory: 20552
+                            message_bytes: 24
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 24
+                        message_bytes_ram: 24
+                      message_bytes_ready: 24
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 0
+           message_stats.ack_details.rate: 0.0
+                    message_stats.deliver: 0
+       message_stats.deliver_details.rate: 0.0
+                message_stats.deliver_get: 6
+   message_stats.deliver_get_details.rate: 0.0
+             message_stats.deliver_no_ack: 0
+message_stats.deliver_no_ack_details.rate: 0.0
+                        message_stats.get: 6
+           message_stats.get_details.rate: 0.0
+                  message_stats.get_empty: 0
+     message_stats.get_empty_details.rate: 0.0
+                 message_stats.get_no_ack: 0
+    message_stats.get_no_ack_details.rate: 0.0
+                    message_stats.publish: 3
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 3
+     message_stats.redeliver_details.rate: 0.0
+                                 messages: 3
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 3
+                             messages_ram: 3
+                           messages_ready: 3
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 3
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 489985
+                  reductions_details.rate: 290.8
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: /
+                                     name: TOPIC2
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 2
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 2
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 2
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 243
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 19936
+                            message_bytes: 10
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 10
+                        message_bytes_ram: 10
+                      message_bytes_ready: 10
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 0
+           message_stats.ack_details.rate: 0.0
+                    message_stats.deliver: 0
+       message_stats.deliver_details.rate: 0.0
+                message_stats.deliver_get: 2
+   message_stats.deliver_get_details.rate: 0.0
+             message_stats.deliver_no_ack: 0
+message_stats.deliver_no_ack_details.rate: 0.0
+                        message_stats.get: 2
+           message_stats.get_details.rate: 0.0
+                  message_stats.get_empty: 1
+     message_stats.get_empty_details.rate: 0.0
+                 message_stats.get_no_ack: 0
+    message_stats.get_no_ack_details.rate: 0.0
+                    message_stats.publish: 2
+       message_stats.publish_details.rate: 0.0
+                  message_stats.redeliver: 0
+     message_stats.redeliver_details.rate: 0.0
+                                 messages: 2
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 2
+                             messages_ram: 2
+                           messages_ready: 2
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 2
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 449056
+                  reductions_details.rate: 287.8
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: demohost
+                                     name: demoq
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: classic
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 0
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 0
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 0
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 165
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 13288
+                            message_bytes: 0
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 0
+                        message_bytes_ram: 0
+                      message_bytes_ready: 0
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 
+       message_stats.publish_details.rate: 
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 0
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 0
+                             messages_ram: 0
+                           messages_ready: 0
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 0
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 203691
+                  reductions_details.rate: 246.4
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+                                    vhost: ibm
+                                     name: ibmq1
+                                     type: classic
+         arguments.x-dead-letter-exchange: 
+      arguments.x-dead-letter-routing-key: 
+                   arguments.x-max-length: 
+                   arguments.x-queue-type: 
+                              auto_delete: False
+ backing_queue_status.avg_ack_egress_rate: 0.0
+backing_queue_status.avg_ack_ingress_rate: 0.0
+     backing_queue_status.avg_egress_rate: 0.0
+    backing_queue_status.avg_ingress_rate: 0.0
+               backing_queue_status.delta: ["delta", "undefined", 0, 0, "undefined"]
+                 backing_queue_status.len: 0
+                backing_queue_status.mode: default
+         backing_queue_status.next_seq_id: 0
+                  backing_queue_status.q1: 0
+                  backing_queue_status.q2: 0
+                  backing_queue_status.q3: 0
+                  backing_queue_status.q4: 0
+    backing_queue_status.target_ram_count: infinity
+                        consumer_capacity: 0
+                     consumer_utilisation: 0
+                                consumers: 0
+                                  durable: True
+                                exclusive: False
+                   exclusive_consumer_tag: None
+       garbage_collection.fullsweep_after: 65535
+         garbage_collection.max_heap_size: 0
+    garbage_collection.min_bin_vheap_size: 46422
+         garbage_collection.min_heap_size: 233
+             garbage_collection.minor_gcs: 33
+                   head_message_timestamp: None
+                               idle_since: 2021-05-25 10:02:31
+                                   memory: 13184
+                            message_bytes: 0
+                  message_bytes_paged_out: 0
+                 message_bytes_persistent: 0
+                        message_bytes_ram: 0
+                      message_bytes_ready: 0
+             message_bytes_unacknowledged: 0
+                        message_stats.ack: 
+           message_stats.ack_details.rate: 
+                    message_stats.deliver: 
+       message_stats.deliver_details.rate: 
+                message_stats.deliver_get: 
+   message_stats.deliver_get_details.rate: 
+             message_stats.deliver_no_ack: 
+message_stats.deliver_no_ack_details.rate: 
+                        message_stats.get: 
+           message_stats.get_details.rate: 
+                  message_stats.get_empty: 
+     message_stats.get_empty_details.rate: 
+                 message_stats.get_no_ack: 
+    message_stats.get_no_ack_details.rate: 
+                    message_stats.publish: 
+       message_stats.publish_details.rate: 
+                  message_stats.redeliver: 
+     message_stats.redeliver_details.rate: 
+                                 messages: 0
+                    messages_details.rate: 0.0
+                       messages_paged_out: 0
+                      messages_persistent: 0
+                             messages_ram: 0
+                           messages_ready: 0
+              messages_ready_details.rate: 0.0
+                       messages_ready_ram: 0
+                  messages_unacknowledged: 0
+     messages_unacknowledged_details.rate: 0.0
+              messages_unacknowledged_ram: 0
+                                     node: rabbit@my-rabbit
+                          operator_policy: None
+                                   policy: None
+                       recoverable_slaves: None
+                               reductions: 37538
+                  reductions_details.rate: 250.4
+               single_active_consumer_tag: None
+                                    state: running
+
+--------------------------------------------------------------------------------
+
+# rabbitmqadmin declare queue name=ibmq2 type=fanout --vhost ibm
+
+ERROR: Argument "type" is not recognised
+
+rabbitmqadmin --help for help
+
+# rabbitmqadmin declare queue name=ibmq2 durable=false
+queue declared
+# 
+# 
+# rabbitmqadmin declare exchange name=ex2 type=fanout --vhost=ibm
+*** Access refused: /api/exchanges/ibm/ex2
+
+# rabbitmqadmin declare exchange name=ex2 type=fanout --vhost=ibm -u bvr -p bvr123
+exchange declared
+# rabbitmqadmin.py export rabbit.definitions.json
+Exported definitions for localhost to "rabbit.definitions.json"
+# cat rabbit.definitions.jso
+cat: rabbit.definitions.jso: No such file or directory
+# cat rabbit.definitions.json 
+{"rabbit_version":"3.8.16","rabbitmq_version":"3.8.16","product_name":"RabbitMQ","product_version":"3.8.16","users":[{"name":"monitor","password_hash":"ymo9Nuu/275G+0PcZjIsNdH/9w2pKN9DlK/Fq4Va4mYJBANF","hashing_algorithm":"rabbit_password_hashing_sha256","tags":"monitoring","limits":{}},{"name":"guest","password_hash":"Az1DxK+/jECV8u7i/boPqqVv35WlSjnilPPs1RlIfXEKvuzt","hashing_algorithm":"rabbit_password_hashing_sha256","tags":"administrator","limits":{}},{"name":"bvr","password_hash":"ORCbElDN18kFJAkE2Kl6kuU7TM2BXEZl97iecVmpPui7E5Qi","hashing_algorithm":"rabbit_password_hashing_sha256","tags":"administrator","limits":{}},{"name":"demoroot","password_hash":"xYC1BxW00fhjOq02r8E9Ez1AUj5tbeCJlYqHHMCMMQWZUUbB","hashing_algorithm":"rabbit_password_hashing_sha256","tags":"administrator","limits":{}}],"vhosts":[{"name":"demohost"},{"name":"/"},{"name":"ibm"}],"permissions":[{"user":"guest","vhost":"demohost","configure":".*","write":".*","read":".*"},{"user":"bvr","vhost":"ibm","configure":".*","write":".*","read":".*"},{"user":"demoroot","vhost":"demohost","configure":".*","write":".*","read":".*"},{"user":"guest","vhost":"/","configure":".*","write":".*","read":".*"},{"user":"bvr","vhost":"demohost","configure":"^bvr-.*","write":".*","read":".*"}],"topic_permissions":[{"user":"bvr","vhost":"demohost","exchange":"amq.topic","write":"^bvr-.*","read":"^bvr-.*"}],"parameters":[{"value":{"max-connections":-1},"vhost":"ibm","component":"vhost-limits","name":"limits"}],"global_parameters":[{"name":"cluster_name","value":"rabbit@my-rabbit"},{"name":"internal_cluster_id","value":"rabbitmq-cluster-id-IhGn6f4yYJK3dFlHImOA7w"}],"policies":[],"queues":[{"name":"demoq","vhost":"demohost","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"ibmq2","vhost":"/","durable":false,"auto_delete":false,"arguments":{}},{"name":"TOPIC1","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"TOPIC2","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"LQ-DLQ","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-dead-letter-exchange":"sample.dlq","x-dead-letter-routing-key":"sampledlq","x-queue-type":"classic"}},{"name":"LQ1","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"LQ-MAXLENG","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-max-length":5,"x-queue-type":"classic"}},{"name":"HEAD2","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"FAN1","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"LQ2","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"FAN2","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"FAN3","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"HEAD1","vhost":"/","durable":true,"auto_delete":false,"arguments":{"x-queue-type":"classic"}},{"name":"ibmq1","vhost":"ibm","durable":true,"auto_delete":false,"arguments":{}}],"exchanges":[{"name":"demoex1","vhost":"demohost","type":"direct","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"sample.dlq","vhost":"/","type":"direct","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"sample.headers","vhost":"/","type":"headers","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"sample.direct","vhost":"/","type":"direct","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"sample.topic","vhost":"/","type":"topic","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"sample.fanout","vhost":"/","type":"fanout","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"ibmexchange1","vhost":"ibm","type":"direct","durable":true,"auto_delete":false,"internal":false,"arguments":{}},{"name":"ex2","vhost":"ibm","type":"fanout","durable":true,"auto_delete":false,"internal":false,"arguments":{}}],"bindings":[{"source":"sample.direct","vhost":"/","destination":"LQ1","destination_type":"queue","routing_key":"samplekey1","arguments":{}},{"source":"sample.direct","vhost":"/","destination":"LQ2","destination_type":"queue","routing_key":"samplekey2","arguments":{}},{"source":"sample.fanout","vhost":"/","destination":"FAN1","destination_type":"queue","routing_key":"","arguments":{}},{"source":"sample.fanout","vhost":"/","destination":"FAN3","destination_type":"queue","routing_key":"","arguments":{}},{"source":"sample.fanout","vhost":"/","destination":"FAN2","destination_type":"queue","routing_key":"FAN2","arguments":{}},{"source":"sample.headers","vhost":"/","destination":"HEAD1","destination_type":"queue","routing_key":"","arguments":{"format":"pdf"}},{"source":"sample.headers","vhost":"/","destination":"HEAD2","destination_type":"queue","routing_key":"","arguments":{"format":"img"}},{"source":"sample.headers","vhost":"/","destination":"HEAD2","destination_type":"queue","routing_key":"","arguments":{"format":"png"}},{"source":"sample.topic","vhost":"/","destination":"TOPIC1","destination_type":"queue","routing_key":"*.ka.*","arguments":{}},{"source":"sample.topic","vhost":"/","destination":"TOPIC2","destination_type":"queue","routing_key":"*.mh.*","arguments":{}},{"source":"ibmexchange1","vhost":"ibm","destination":"ibmq1","destination_type":"queue","routing_key":"ibmkey","arguments":{}}]}# 
+# 
+# 
+# 
+# 
+# 
+# 
+# rabbitmqadin -q import rabbit.definition.json
+sh: 133: rabbitmqadin: not found
+# rabbitmqadmin -q import rabbit.definition.json                       
+Traceback (most recent call last):
+  File "/usr/local/bin/rabbitmqadmin", line 1184, in <module>
+    main()
+  File "/usr/local/bin/rabbitmqadmin", line 523, in main
+    method()
+  File "/usr/local/bin/rabbitmqadmin", line 710, in invoke_import
+    with open(path, 'rb') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'rabbit.definition.json'
+# 
+# 
+# 
+# 
+
+
+# rabbitmq-plugins list
+Listing plugins with pattern ".*" ...
+ Configured: E = explicitly enabled; e = implicitly enabled
+ | Status: * = running on rabbit@my-rabbit
+ |/
+[  ] rabbitmq_amqp1_0                  3.8.16
+[  ] rabbitmq_auth_backend_cache       3.8.16
+[  ] rabbitmq_auth_backend_http        3.8.16
+[  ] rabbitmq_auth_backend_ldap        3.8.16
+[  ] rabbitmq_auth_backend_oauth2      3.8.16
+[  ] rabbitmq_auth_mechanism_ssl       3.8.16
+[  ] rabbitmq_consistent_hash_exchange 3.8.16
+[  ] rabbitmq_event_exchange           3.8.16
+[  ] rabbitmq_federation               3.8.16
+[  ] rabbitmq_federation_management    3.8.16
+[  ] rabbitmq_jms_topic_exchange       3.8.16
+[E*] rabbitmq_management               3.8.16
+[e*] rabbitmq_management_agent         3.8.16
+[  ] rabbitmq_mqtt                     3.8.16
+[  ] rabbitmq_peer_discovery_aws       3.8.16
+[  ] rabbitmq_peer_discovery_common    3.8.16
+[  ] rabbitmq_peer_discovery_consul    3.8.16
+[  ] rabbitmq_peer_discovery_etcd      3.8.16
+[  ] rabbitmq_peer_discovery_k8s       3.8.16
+[E*] rabbitmq_prometheus               3.8.16
+[  ] rabbitmq_random_exchange          3.8.16
+[  ] rabbitmq_recent_history_exchange  3.8.16
+[  ] rabbitmq_sharding                 3.8.16
+[  ] rabbitmq_shovel                   3.8.16
+[  ] rabbitmq_shovel_management        3.8.16
+[  ] rabbitmq_stomp                    3.8.16
+[  ] rabbitmq_top                      3.8.16
+[  ] rabbitmq_tracing                  3.8.16
+[  ] rabbitmq_trust_store              3.8.16
+[e*] rabbitmq_web_dispatch             3.8.16
+[  ] rabbitmq_web_mqtt                 3.8.16
+[  ] rabbitmq_web_mqtt_examples        3.8.16
+[  ] rabbitmq_web_stomp                3.8.16
+[  ] rabbitmq_web_stomp_examples       3.8.16
+# 
+# 
+# rabbitmq-plugins list -v
+Listing plugins with pattern ".*" ...
+ Configured: E = explicitly enabled; e = implicitly enabled
+ | Status: * = running on rabbit@my-rabbit
+ |/
+[  ] rabbitmq_amqp1_0
+     Version:     	3.8.16
+     Dependencies:	[amqp_client,amqp10_common]
+     Description: 	AMQP 1.0 support for RabbitMQ
+[  ] rabbitmq_auth_backend_cache
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ Authentication Backend cache
+[  ] rabbitmq_auth_backend_http
+     Version:     	3.8.16
+     Dependencies:	[amqp_client]
+     Description: 	RabbitMQ HTTP Authentication Backend
+[  ] rabbitmq_auth_backend_ldap
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ LDAP Authentication Backend
+[  ] rabbitmq_auth_backend_oauth2
+     Version:     	3.8.16
+     Dependencies:	[cowlib,jose]
+     Description: 	OAuth 2 and JWT-based AuthN and AuthZ backend
+[  ] rabbitmq_auth_mechanism_ssl
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ SSL authentication (SASL EXTERNAL)
+[  ] rabbitmq_consistent_hash_exchange
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	Consistent Hash Exchange Type
+[  ] rabbitmq_event_exchange
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	Event Exchange Type
+[  ] rabbitmq_federation
+     Version:     	3.8.16
+     Dependencies:	[amqp_client]
+     Description: 	RabbitMQ Federation
+[  ] rabbitmq_federation_management
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_management,rabbitmq_federation]
+     Description: 	RabbitMQ Federation Management
+[  ] rabbitmq_jms_topic_exchange
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ JMS topic selector exchange plugin
+[E*] rabbitmq_management
+     Version:     	3.8.16
+     Dependencies:	[amqp_client,cowboy,cowlib,rabbitmq_web_dispatch,rabbitmq_management_agent]
+     Description: 	RabbitMQ Management Console
+[e*] rabbitmq_management_agent
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ Management Agent
+[  ] rabbitmq_mqtt
+     Version:     	3.8.16
+     Dependencies:	[amqp_client]
+     Description: 	RabbitMQ MQTT Adapter
+[  ] rabbitmq_peer_discovery_aws
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_peer_discovery_common,rabbitmq_aws]
+     Description: 	AWS-based RabbitMQ peer discovery backend
+[  ] rabbitmq_peer_discovery_common
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	Modules shared by various peer discovery backends
+[  ] rabbitmq_peer_discovery_consul
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_peer_discovery_common]
+     Description: 	Consult-based RabbitMQ peer discovery backend
+[  ] rabbitmq_peer_discovery_etcd
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_peer_discovery_common,eetcd,gun]
+     Description: 	etcd-based RabbitMQ peer discovery backend
+[  ] rabbitmq_peer_discovery_k8s
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_peer_discovery_common]
+     Description: 	Kubernetes-based RabbitMQ peer discovery backend
+[E*] rabbitmq_prometheus
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_management_agent,prometheus,rabbitmq_web_dispatch]
+     Description: 	
+[  ] rabbitmq_random_exchange
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ Random Exchange
+[  ] rabbitmq_recent_history_exchange
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ Recent History Exchange
+[  ] rabbitmq_sharding
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ Sharding Plugin
+[  ] rabbitmq_shovel
+     Version:     	3.8.16
+     Dependencies:	[amqp_client,amqp10_client]
+     Description: 	Data Shovel for RabbitMQ
+[  ] rabbitmq_shovel_management
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_management,rabbitmq_shovel]
+     Description: 	Management extension for the Shovel plugin
+[  ] rabbitmq_stomp
+     Version:     	3.8.16
+     Dependencies:	[amqp_client]
+     Description: 	RabbitMQ STOMP plugin
+[  ] rabbitmq_top
+     Version:     	3.8.16
+     Dependencies:	[amqp_client,rabbitmq_management]
+     Description: 	RabbitMQ Top
+[  ] rabbitmq_tracing
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_management]
+     Description: 	RabbitMQ message logging / tracing
+[  ] rabbitmq_trust_store
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	Client X.509 certificates trust store
+[e*] rabbitmq_web_dispatch
+     Version:     	3.8.16
+     Dependencies:	[cowboy]
+     Description: 	RabbitMQ Web Dispatcher
+[  ] rabbitmq_web_mqtt
+     Version:     	3.8.16
+     Dependencies:	[cowboy,rabbitmq_mqtt]
+     Description: 	RabbitMQ MQTT-over-WebSockets adapter
+[  ] rabbitmq_web_mqtt_examples
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_web_dispatch,rabbitmq_web_mqtt]
+     Description: 	Rabbit WEB-MQTT - examples
+[  ] rabbitmq_web_stomp
+     Version:     	3.8.16
+     Dependencies:	[cowboy,rabbitmq_stomp]
+     Description: 	RabbitMQ STOMP-over-WebSockets support
+[  ] rabbitmq_web_stomp_examples
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_web_dispatch,rabbitmq_web_stomp]
+     Description: 	Rabbit WEB-STOMP - examples
+# rabbitmq-plugins list -v management
+Listing plugins with pattern "management" ...
+ Configured: E = explicitly enabled; e = implicitly enabled
+ | Status: * = running on rabbit@my-rabbit
+ |/
+[  ] rabbitmq_federation_management
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_management,rabbitmq_federation]
+     Description: 	RabbitMQ Federation Management
+[E*] rabbitmq_management
+     Version:     	3.8.16
+     Dependencies:	[amqp_client,cowboy,cowlib,rabbitmq_web_dispatch,rabbitmq_management_agent]
+     Description: 	RabbitMQ Management Console
+[e*] rabbitmq_management_agent
+     Version:     	3.8.16
+     Dependencies:	[]
+     Description: 	RabbitMQ Management Agent
+[  ] rabbitmq_shovel_management
+     Version:     	3.8.16
+     Dependencies:	[rabbitmq_management,rabbitmq_shovel]
+     Description: 	Management extension for the Shovel plugin
+# rabbitmq-plugins list -e rabbit
+Listing plugins with pattern "rabbit" ...
+ Configured: E = explicitly enabled; e = implicitly enabled
+ | Status: * = running on rabbit@my-rabbit
+ |/
+[E*] rabbitmq_management       3.8.16
+[e*] rabbitmq_management_agent 3.8.16
+[E*] rabbitmq_prometheus       3.8.16
+[e*] rabbitmq_web_dispatch     3.8.16
+# 
+# 
+# 
+# rabbitmq-plugins enable rabbitmq_shovel rabbitmq_shovel_management
+Enabling plugins on node rabbit@my-rabbit:
+rabbitmq_shovel
+rabbitmq_shovel_management
+The following plugins have been configured:
+  rabbitmq_management
+  rabbitmq_management_agent
+  rabbitmq_prometheus
+  rabbitmq_shovel
+  rabbitmq_shovel_management
+  rabbitmq_web_dispatch
+Applying plugin configuration to rabbit@my-rabbit...
+The following plugins have been enabled:
+  rabbitmq_shovel
+  rabbitmq_shovel_management
+
+started 2 plugins.
+# rabbitmq-plugins disable plugin_name
+Disabling plugins on node rabbit@my-rabbit:
+plugin_name
+The following plugins have been configured:
+  rabbitmq_management
+  rabbitmq_management_agent
+  rabbitmq_prometheus
+  rabbitmq_shovel
+  rabbitmq_shovel_management
+  rabbitmq_web_dispatch
+Applying plugin configuration to rabbit@my-rabbit...
+Plugin configuration unchanged.
+# 
+
+
+
+
+
+
+------
+
+
+docker run hello-world
+
+
+
+
+501  docker version
+  502  docker images
+  503  docker rmi -f 75b79f21486d 246db2517862
+  504  docker ps -a
+  505  docker rm -f bd5119f693e9
+  506  docker rmi -f 75b79f21486d 246db2517862
+  507  docker images
+  508  clear
+  509  docker images
+  510  docker ps -a
+  511  docker pull hello-world
+  512  docker run hello-world
+  513  docker images
+  514  docker ps -a
+  515  docker run hello-world
+  516  docker ps -a
+  517  docker info
+  518  docker run -it centos /bin/bash
+  519  docker ps -a
+  520  docker run -it e8b8c0f2607c /bin/bash
+  521  docker start e8b8c0f2607c
+  522  docker ps 
+  523  docker exec -it /bin/bash
+  524  docker exec -it e8b8c0f2607c /bin/bash
+  525  ls -l
+
+
+
+ 527  docker images
+  528  docker pull vishymails/tomcatimage:1.0
+  529  docker images
+  530  docker run vishymails/tomcatimage:1.0 -p 8080:8080 
+  531  docker run -p 8080:8080 vishymails/tomcatimage:1.0 
+  532  docker run -p 900:8080 vishymails/tomcatimage:1.0 
+  533  docker ps -a
+  534  docker images
+  535  docker history 38999a89a0fa
+  536  docker ps 
+  537  docker ps -a
+  538  docker start -d a75f0f0c1f5a
+  539  docker start  a75f0f0c1f5a
+  540  docker ps -a
+  541  docker rm -f a75f0f0c1f5a d00bb7e80bf5 066bc45e7b21
+  542  docker ps -a
+  543  docker run -d -p 8080:8080 vishymails/tomcatimage:1.0
+  544  docker ps -a
+
+
+
+
+
+
+Dockerfile
+-------------
+
+
+FROM ubuntu
+
+RUN apt-get update
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apache2
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apache2-utils
+
+RUN apt-get clean
+
+EXPOSE 80
+
+CMD ["apache2ctl", "-D", "FOREGROUND"]
+
+# docker build -t sgapache:1.0 .
+
+docker run -p 80:80 sgapache:1.0
+
+
+
+
+ 526  docker run -d --hostname my-rabbit --name rabbitmq -p 8080:15672 rabbitmq:3-management
+  527  docker start 2c48b4d3f9a5
+  528  docker ps
+  529  docker exec -it 2c48b4d3f9a5 sh
+
+
+
+
+
+
+ 536  docker images
+  537  docker run -d --hostname rabbit1 --name rabbit1 -e RABBITMQ_ERLANG_COOKIE='rabbitcluster' -p 30000:5672 -p 30001:15672 rabbitmq:management
+  538  docker ps 
+  539  docker run -d --hostname rabbit2 --name rabbit2 -e RABBITMQ_ERLANG_COOKIE='rabbitcluster' -p 30002:5672 -p 30003:15672 rabbitmq:management
+  540  docker ps 
+  541  docker rm -f ba8aa55639f4
+  542  docker run -d --hostname rabbit2 --name rabbit2 --link rabbit1:rabbit1 -e RABBITMQ_ERLANG_COOKIE='rabbitcluster' -p 30002:5672 -p 30003:15672 rabbitmq:management
+  543  docker run -d --hostname rabbit3 --name rabbit3 --link rabbit1:rabbit1 --link rabbit2:rabbit2 -e RABBITMQ_ERLANG_COOKIE='rabbitcluster' -p 30004:5672 -p 30005:15672 rabbitmq:management
+  544  docker exec -it rabbit2 sh
+  545  docker exec -it rabbit3 sh
+  546  history
+
+
+
+INSIDE RABBIT2 AND 3 
+---------------------------------
+
+rabbitmqctl stop_app
+rabbitmqctl join_cluster rabbit@rabbit1
+rabbitmqctl 
+
+
+
+
+
+rabbitmq-diagnostics alarms
+   10  rabbitmq-diagnostics check_alarams
+   11  rabbitmq-diagnostics check_alarms
+   12  rabbitmq-diagnostics check_port_connectivity
+   13  rabbitmq-diagnostics check_port_listener 5672
+   14  rabbitmq-diagnostics check_port_listener mqtt
+   15  rabbitmq-diagnostics check_running
+   16  rabbitmq-diagnostics check_virtual_hosts --timeout 60
+   17  rabbitmq-diagnostics discover_peers --timeout 60
+   18  rabbitmq-diagnostics erlang_cookie_hash -q
+   19  rabbitmq-diagnostics erlang_version -q
+   20  rabbitmq-diagnostics is_booting
+   21  rabbitmq-diagnostics is_running
+   22  rabbitmq-diagnostics listeners
+   23  rabbitmq-diagnostics log_tail -number 100
+   24  rabbitmq-diagnostics log_tail --number 100
+   25  rabbitmq-diagnostics log_tail_stream --duration 60
+   26  rabbitmq-diagnostics maybe_stuck -q
+   27  rabbitmq-diagnostics memory_breakdown --unit gigabytes
+   28  rabbitmq-diagnostics observer --interval 10
+   29  rabbitmq-diagnostics runtime_thread_stats --sample-interval 10
+   30  rabbitmq-diagnostics server_version -q
+   31  rabbitmq-diagnostics tls_versions -q
+   32  rabbitmq-diagnostics log_location -a
+   33  history
+
