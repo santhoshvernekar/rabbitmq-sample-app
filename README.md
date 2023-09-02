@@ -67,4 +67,4 @@ Its like regular installable file, you can easily install this
 
 
 
-I hope this helped you :)
+Happy Learning :)
